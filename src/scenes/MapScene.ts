@@ -348,7 +348,8 @@ export default class MapScene extends ModuleScene {
 
   private canEnterLocation(locationName: string): boolean {
     // 先用假條件：只有地點名稱包含「廳堂」時視為同行者願意進入。
-    return locationName.includes('廳堂');
+    //return locationName.includes('廳堂');
+    return true;
   }
 
   private isStoryFinished(story: StoryNode): boolean {
