@@ -1,4 +1,4 @@
-import { WorldStateData } from './Types';
+import type { WorldStateData } from './Types';
 export class WorldState {
   data: WorldStateData = {
     位置: "港邊醫館後巷", 煞氣: "濁", 陰德:"低", 同行:[], 物品:[], 字卡:[],

@@ -3,11 +3,14 @@ export type RouteCtx<TIn=any,TOut=any> = { in?: TIn; resolve: (r:TOut)=>void; re
 
 export class Router {
   private stack: string[] = [];
-  constructor(private game: Phaser.Game) {}
+  private game: Phaser.Game;
+  constructor(game: Phaser.Game) {
+    this.game = game;
+  }
   push<TIn=any,TOut=any>(key: string, input?: TIn): Promise<TOut> {
     return new Promise<TOut>((resolve, reject) => {
       this.stack.push(key);
-      this.game.scene.launch(key, { __route__: { in: input, resolve, reject } as RouteCtx<TIn,TOut> });
+      this.game.scene.run(key, { __route__: { in: input, resolve, reject } as RouteCtx<TIn,TOut> });
     });
   }
   pop() {
