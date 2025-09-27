@@ -2,9 +2,10 @@ import Phaser from 'phaser';
 import { ModuleScene, Router } from '@core/Router';
 import { DataRepo } from '@core/DataRepo';
 import { WorldState } from '@core/WorldState';
+import { SpawnDirector, type DirectedAnchor } from '@core/SpawnDirector';
 import type { Anchor, NPC, Spirit, StoryNode } from '@core/Types';
 
-type AnchorEntry = { anchor: Anchor; text: Phaser.GameObjects.Text };
+type AnchorEntry = { anchor?: DirectedAnchor; text: Phaser.GameObjects.Text };
 type StoryEntry = { story?: StoryNode; text: Phaser.GameObjects.Text };
 
 export default class MapScene extends ModuleScene {
@@ -12,6 +13,7 @@ export default class MapScene extends ModuleScene {
   private router?: Router;
   private anchors: Anchor[] = [];
   private stories: StoryNode[] = [];
+  private spirits: Spirit[] = [];
   private companionNames = new Map<string, string>();
   private currentLocation = '未知';
   private statusLabel?: Phaser.GameObjects.Text;
@@ -19,6 +21,8 @@ export default class MapScene extends ModuleScene {
   private messageTimer?: Phaser.Time.TimerEvent;
   private locationEntries: AnchorEntry[] = [];
   private storyEntries: StoryEntry[] = [];
+  private director = new SpawnDirector();
+  private accessibleAnchors: DirectedAnchor[] = [];
 
   constructor() {
     super('MapScene');
@@ -97,10 +101,9 @@ export default class MapScene extends ModuleScene {
       ]);
       this.anchors = anchors;
       this.stories = stories;
+      this.spirits = spirits;
       this.buildCompanionNames(npcs, spirits);
-      this.buildLocationList(32, 168);
-      this.refreshStoryList();
-      this.updateStatusLabel();
+      this.refreshMapState();
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       this.showMessage(`載入資料失敗：${message}`);
@@ -116,11 +119,13 @@ export default class MapScene extends ModuleScene {
     });
   }
 
-  private buildLocationList(x: number, startY: number) {
+  private renderLocationList(x: number, startY: number) {
     this.locationEntries.forEach(({ text }) => text.destroy());
     this.locationEntries = [];
 
-    if (this.anchors.length === 0) {
+    this.accessibleAnchors = this.director.listAccessibleAnchors(this.world, this.anchors, this.spirits);
+
+    if (this.accessibleAnchors.length === 0) {
       const text = this.add
         .text(x, startY, '目前沒有可去地點', {
           fontSize: '20px',
@@ -128,50 +133,36 @@ export default class MapScene extends ModuleScene {
         })
         .setOrigin(0, 0);
       text.disableInteractive();
+      this.locationEntries.push({ text });
       return;
     }
 
-    this.anchors.forEach((anchor, index) => {
+    this.accessibleAnchors.forEach((anchor, index) => {
+      const isCurrent = anchor.地點 === this.currentLocation;
+      const resolved = Boolean(anchor.meta?.resolved);
+      const label = `${anchor.地點}${resolved ? '（已送行）' : ''}`;
+      const color = resolved ? '#777' : isCurrent ? '#ff0' : '#aaf';
       const text = this.add
-        .text(x, startY + index * 32, '', {
+        .text(x, startY + index * 32, `${isCurrent ? '★' : '・'}${label}`, {
           fontSize: '20px',
-          color: '#aaf'
+          color
         })
-        .setOrigin(0, 0)
-        .setInteractive({ useHandCursor: true });
+        .setOrigin(0, 0);
 
-      text.on('pointerup', () => {
-        this.handleLocationClick(anchor);
-      });
+      if (!resolved && !isCurrent) {
+        text.setInteractive({ useHandCursor: true });
+        text.on('pointerup', () => {
+          this.handleLocationClick(anchor);
+        });
+      } else {
+        text.disableInteractive();
+      }
 
       this.locationEntries.push({ anchor, text });
     });
-
-    this.updateLocationEntries();
   }
 
-  private updateLocationEntries() {
-    this.locationEntries.forEach(({ anchor, text }) => {
-      const isCurrent = anchor.地點 === this.currentLocation;
-      const cleared = this.isAnchorCleared(anchor);
-      const label = cleared ? '（已送行）' : anchor.地點;
-      text.setText(`${isCurrent ? '★' : '・'}${label}`);
-      if (cleared) {
-        text.setStyle({ color: '#777' });
-        text.disableInteractive();
-        return;
-      }
-
-      text.setStyle({ color: isCurrent ? '#ff0' : '#aaf' });
-      if (isCurrent) {
-        text.disableInteractive();
-      } else {
-        text.setInteractive({ useHandCursor: true });
-      }
-    });
-  }
-
-  private handleLocationClick(anchor: Anchor) {
+  private handleLocationClick(anchor: DirectedAnchor) {
     if (!this.world) {
       this.showMessage('無法更新位置：缺少世界狀態');
       return;
@@ -192,12 +183,10 @@ export default class MapScene extends ModuleScene {
     this.currentLocation = destination;
 
     this.showMessage(`已移動至 ${destination}`);
-    this.updateStatusLabel();
-    this.updateLocationEntries();
-    this.refreshStoryList();
+    this.refreshMapState();
   }
 
-  private refreshStoryList() {
+  private renderStoryList() {
     this.storyEntries.forEach(({ text }) => text.destroy());
     this.storyEntries = [];
 
@@ -205,11 +194,6 @@ export default class MapScene extends ModuleScene {
     const storyStartY = 168;
 
     const currentAnchor = this.anchors.find((anchor) => anchor.地點 === this.currentLocation);
-    const anchorCleared = currentAnchor ? this.isAnchorCleared(currentAnchor) : false;
-    const candidateStories = currentAnchor && !anchorCleared
-      ? this.stories.filter((story) => story.anchor === currentAnchor.id)
-      : [];
-
     if (!currentAnchor) {
       const text = this.add
         .text(storyStartX, storyStartY, '尚未定位到錨點', {
@@ -222,7 +206,20 @@ export default class MapScene extends ModuleScene {
       return;
     }
 
-    if (anchorCleared) {
+    const accessibleAnchor = this.accessibleAnchors.find((anchor) => anchor.id === currentAnchor.id);
+    if (!accessibleAnchor) {
+      const text = this.add
+        .text(storyStartX, storyStartY, '錨點條件未滿足，暫不可進行', {
+          fontSize: '18px',
+          color: '#fff'
+        })
+        .setOrigin(0, 0);
+      this.storyEntries.push({ text });
+      text.disableInteractive();
+      return;
+    }
+
+    if (accessibleAnchor.meta?.resolved) {
       const text = this.add
         .text(storyStartX, storyStartY, '此處已送行，靜候新緣', {
           fontSize: '18px',
@@ -234,7 +231,9 @@ export default class MapScene extends ModuleScene {
       return;
     }
 
-    if (candidateStories.length === 0) {
+    const startableStories = this.director.listStartableStories(this.world, this.stories, currentAnchor.id);
+
+    if (startableStories.length === 0) {
       const text = this.add
         .text(storyStartX, storyStartY, '目前沒有可啟動的劇情', {
           fontSize: '18px',
@@ -246,26 +245,16 @@ export default class MapScene extends ModuleScene {
       return;
     }
 
-    candidateStories.forEach((story, index) => {
-      const finished = this.isStoryFinished(story);
+    startableStories.forEach((story, index) => {
       const text = this.add
-        .text(
-          storyStartX,
-          storyStartY + index * 32,
-          `・${story.id}${finished ? '（已完成）' : ''}`,
-          {
-            fontSize: '20px',
-            color: finished ? '#777' : '#aaf'
-          }
-        )
+        .text(storyStartX, storyStartY + index * 32, `・${story.id}`, {
+          fontSize: '20px',
+          color: '#aaf'
+        })
         .setOrigin(0, 0)
-        .setInteractive({ useHandCursor: !finished });
+        .setInteractive({ useHandCursor: true });
 
       text.on('pointerup', () => {
-        if (this.isStoryFinished(story)) {
-          this.showMessage('劇情已完成');
-          return;
-        }
         void this.launchStory(story, text);
       });
 
@@ -281,7 +270,7 @@ export default class MapScene extends ModuleScene {
 
     if (this.isStoryFinished(story)) {
       this.showMessage('劇情已完成');
-      this.refreshStoryList();
+      this.renderStoryList();
       return;
     }
 
@@ -313,8 +302,8 @@ export default class MapScene extends ModuleScene {
   private refreshMapState() {
     this.currentLocation = this.world?.data?.位置 ?? this.currentLocation;
     this.updateStatusLabel();
-    this.updateLocationEntries();
-    this.refreshStoryList();
+    this.renderLocationList(32, 168);
+    this.renderStoryList();
   }
 
   private updateStatusLabel() {
@@ -343,23 +332,6 @@ export default class MapScene extends ModuleScene {
     });
   }
 
-  private canEnterLocation(locationName: string): boolean {
-    // 先用假條件：只有地點名稱包含「廳堂」時視為同行者願意進入。
-    return locationName.includes('廳堂');
-  }
-
-  private isAnchorCleared(anchor: Anchor): boolean {
-    const clearedSpirits = this.world?.data?.已安息靈 ?? [];
-    const serviceSpirit = anchor.服務靈;
-    return !!serviceSpirit && clearedSpirits.includes(serviceSpirit);
-  }
-
-  private isStoryFinished(story: StoryNode): boolean {
-    const flagKey = `story:${story.id}`;
-    const flags = this.world?.data?.旗標 ?? {};
-    return Boolean(flags[flagKey]);
-  }
-
   private buildCompanionNames(npcs: NPC[], spirits: Spirit[]) {
     this.companionNames.clear();
     npcs.forEach((npc) => {
@@ -372,5 +344,17 @@ export default class MapScene extends ModuleScene {
 
   private getCompanionName(id: string): string {
     return this.companionNames.get(id) ?? id;
+  }
+
+  private canEnterLocation(locationName: string): boolean {
+    // 先用假條件：只有地點名稱包含「廳堂」時視為同行者願意進入。
+    //return locationName.includes('廳堂');
+    return true;
+  }
+
+  private isStoryFinished(story: StoryNode): boolean {
+    const flagKey = `story:${story.id}`;
+    const flags = this.world?.data?.旗標 ?? {};
+    return Boolean(flags[flagKey]);
   }
 }
