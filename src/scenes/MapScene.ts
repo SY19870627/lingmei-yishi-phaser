@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { ModuleScene, Router } from '@core/Router';
 import { DataRepo } from '@core/DataRepo';
 import { WorldState } from '@core/WorldState';
-import type { Anchor, StoryNode } from '@core/Types';
+import type { Anchor, NPC, Spirit, StoryNode } from '@core/Types';
 
 type AnchorEntry = { anchor: Anchor; text: Phaser.GameObjects.Text };
 type StoryEntry = { story?: StoryNode; text: Phaser.GameObjects.Text };
@@ -12,6 +12,7 @@ export default class MapScene extends ModuleScene {
   private router?: Router;
   private anchors: Anchor[] = [];
   private stories: StoryNode[] = [];
+  private companionNames = new Map<string, string>();
   private currentLocation = '未知';
   private statusLabel?: Phaser.GameObjects.Text;
   private messageLabel?: Phaser.GameObjects.Text;
@@ -88,14 +89,18 @@ export default class MapScene extends ModuleScene {
     }
 
     try {
-      const [anchors, stories] = await Promise.all([
+      const [anchors, stories, npcs, spirits] = await Promise.all([
         repo.get<Anchor[]>('anchors'),
-        repo.get<StoryNode[]>('stories')
+        repo.get<StoryNode[]>('stories'),
+        repo.get<NPC[]>('npcs'),
+        repo.get<Spirit[]>('spirits')
       ]);
       this.anchors = anchors;
       this.stories = stories;
+      this.buildCompanionNames(npcs, spirits);
       this.buildLocationList(32, 168);
       this.refreshStoryList();
+      this.updateStatusLabel();
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       this.showMessage(`載入資料失敗：${message}`);
@@ -242,15 +247,25 @@ export default class MapScene extends ModuleScene {
     }
 
     candidateStories.forEach((story, index) => {
+      const finished = this.isStoryFinished(story);
       const text = this.add
-        .text(storyStartX, storyStartY + index * 32, `・${story.id}`, {
-          fontSize: '20px',
-          color: '#aaf'
-        })
+        .text(
+          storyStartX,
+          storyStartY + index * 32,
+          `・${story.id}${finished ? '（已完成）' : ''}`,
+          {
+            fontSize: '20px',
+            color: finished ? '#777' : '#aaf'
+          }
+        )
         .setOrigin(0, 0)
-        .setInteractive({ useHandCursor: true });
+        .setInteractive({ useHandCursor: !finished });
 
       text.on('pointerup', () => {
+        if (this.isStoryFinished(story)) {
+          this.showMessage('劇情已完成');
+          return;
+        }
         void this.launchStory(story, text);
       });
 
@@ -261,6 +276,12 @@ export default class MapScene extends ModuleScene {
   private async launchStory(story: StoryNode, text: Phaser.GameObjects.Text) {
     if (!this.router) {
       this.showMessage('無法啟動劇情：缺少路由');
+      return;
+    }
+
+    if (this.isStoryFinished(story)) {
+      this.showMessage('劇情已完成');
+      this.refreshStoryList();
       return;
     }
 
@@ -300,11 +321,11 @@ export default class MapScene extends ModuleScene {
     if (!this.statusLabel) {
       return;
     }
-    const flagEntries = Object.entries(this.world?.data?.旗標 ?? {});
-    const flagText = flagEntries.length
-      ? flagEntries.map(([key, value]) => `${key}: ${String(value)}`).join('\n')
-      : '目前沒有旗標資料';
-    this.statusLabel.setText(`當前位置：${this.currentLocation}\n旗標：\n${flagText}`);
+    const companions = this.world?.data?.同行 ?? [];
+    const companionText = companions.length
+      ? companions.map((id) => this.getCompanionName(id)).join('、')
+      : '目前沒有同行者';
+    this.statusLabel.setText(`當前位置：${this.currentLocation}\n同行者：${companionText}`);
   }
 
   private showMessage(message: string) {
@@ -331,5 +352,25 @@ export default class MapScene extends ModuleScene {
     const clearedSpirits = this.world?.data?.已安息靈 ?? [];
     const serviceSpirit = anchor.服務靈;
     return !!serviceSpirit && clearedSpirits.includes(serviceSpirit);
+  }
+
+  private isStoryFinished(story: StoryNode): boolean {
+    const flagKey = `story:${story.id}`;
+    const flags = this.world?.data?.旗標 ?? {};
+    return Boolean(flags[flagKey]);
+  }
+
+  private buildCompanionNames(npcs: NPC[], spirits: Spirit[]) {
+    this.companionNames.clear();
+    npcs.forEach((npc) => {
+      this.companionNames.set(npc.id, npc.稱呼 ?? npc.id);
+    });
+    spirits.forEach((spirit) => {
+      this.companionNames.set(spirit.id, spirit.名 ?? spirit.id);
+    });
+  }
+
+  private getCompanionName(id: string): string {
+    return this.companionNames.get(id) ?? id;
   }
 }
