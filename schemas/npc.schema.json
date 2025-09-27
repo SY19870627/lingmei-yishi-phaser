@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "NPCList",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["id", "稱呼", "性格", "避雷", "轉折階段", "可被說動的點", "到場條件"],
+    "properties": {
+      "id": { "type": "string" },
+      "稱呼": { "type": "string" },
+      "性格": {
+        "type": "array",
+        "items": { "type": "string" }
+      },
+      "避雷": {
+        "type": "array",
+        "items": { "type": "string" }
+      },
+      "轉折階段": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "enum": ["抗拒", "猶豫", "願試", "承諾"]
+        },
+        "minItems": 1,
+        "uniqueItems": true
+      },
+      "可被說動的點": {
+        "type": "array",
+        "items": { "type": "string" }
+      },
+      "到場條件": {
+        "type": "array",
+        "items": { "type": "string" }
+      }
+    }
+  }
+}

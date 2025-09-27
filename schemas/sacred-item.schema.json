@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SacredItemList",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["id", "名", "來源", "用途"],
+    "properties": {
+      "id": { "type": "string" },
+      "名": { "type": "string" },
+      "來源": { "type": "string" },
+      "用途": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "enum": ["安撫", "請託", "作證", "喚醒"]
+        },
+        "minItems": 1,
+        "uniqueItems": true
+      },
+      "鉤子": { "type": "string" }
+    }
+  }
+}
