@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "lint:data": "node scripts/integrity-check.mjs"
   },
   "devDependencies": {
     "@types/node": "^24.5.2",

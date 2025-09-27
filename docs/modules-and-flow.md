@@ -50,3 +50,7 @@
 4. **跨模組資料互動**：
    - `InventoryScene` 選取的物品 id、`GhostCommScene` 產生的需求、`HintsScene` 展示的旗標皆寫入 `WorldState`。
    - 玩家可重複循環以上模組，蒐集資訊 → 回到地圖／劇情 → 再次調整物品與提示，支援主線決策。
+
+## 資料上線流程
+1. 本地更新資料後執行 `npm run lint:data` 確認無紅燈。
+2. 驗證通過再送出 Pull Request，並附上檢查結果。
