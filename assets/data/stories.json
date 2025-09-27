@@ -3,9 +3,13 @@
     "id":"story_wang_01","anchor":"anchor_zu_cuo_hall",
     "steps":[
       {"t":"TEXT","who":"旁白","text":"廳堂微潮，燈影搖。"},
+      {"t":"TEXT","who":"旁白","text":"牌位上刻著斑駁的金字，似乎在霧氣裡浮沉。"},
       {"t":"TEXT","who":"亡魂","text":"她不吃塑膠做的飯。"},
+      {"t":"TEXT","who":"亡魂","text":"你聽得見嗎？她說飯菜沒有煙火味。"},
       {"t":"CALL_GHOST_COMM","spiritId":"spirit_wang_ayi"},
+      {"t":"TEXT","who":"旁白","text":"亡魂的聲音忽近忽遠，指引你走向供桌前。"},
       {"t":"CALL_MEDIATION","npcId":"npc_wang_shushu"},
+      {"t":"TEXT","who":"旁白","text":"叔叔點頭，端起剛蒸好的飯，廳堂終於溫熱起來。"},
       {"t":"END"}
     ]
   },
@@ -13,10 +17,14 @@
     "id":"story_liang_01","anchor":"anchor_old_well_courtyard",
     "steps":[
       {"t":"TEXT","who":"旁白","text":"古井旁潮氣陣陣，陰影如水漾開。"},
+      {"t":"TEXT","who":"旁白","text":"枯繩垂掛，風一吹便敲打井壁，像是在催促誰趕緊回應。"},
       {"t":"TEXT","who":"井靈","text":"有人堵住了我的喉嚨。"},
+      {"t":"TEXT","who":"井靈","text":"泥沙越堆越滿，我要怎麼吐出被困住的水？"},
       {"t":"CALL_GHOST_COMM","spiritId":"spirit_liang_sister"},
       {"t":"CALL_MEDIATION","npcId":"npc_liang_uncle"},
+      {"t":"TEXT","who":"旁白","text":"叔叔拎起工具，決心重新疏通古井。靈光在井口盤旋。"},
       {"t":"UPDATE_FLAG","flag":"liang_well_cleansed","value":true},
+      {"t":"TEXT","who":"旁白","text":"井水冒出細細的氣泡，像是在感謝你的耐心。"},
       {"t":"END"}
     ]
   },
@@ -24,10 +32,14 @@
     "id":"story_fisher_01","anchor":"anchor_seaside_altar",
     "steps":[
       {"t":"TEXT","who":"旁白","text":"海風吹過荒廢的祭壇，鹹味刺入喉間。"},
+      {"t":"TEXT","who":"旁白","text":"浪花打在岩壁上，濺起的水霧在月色下泛著銀光。"},
       {"t":"TEXT","who":"潮童","text":"魚燈沒亮，他們找不到回家的路。"},
+      {"t":"TEXT","who":"潮童","text":"我試著呼喊，可是潮聲把我的話全都吞了。"},
       {"t":"GIVE_ITEM","itemId":"it_sea_lantern","message":"獲得潮童留下的『潮返燈芯』"},
       {"t":"CALL_GHOST_COMM","spiritId":"spirit_fisher_child"},
+      {"t":"TEXT","who":"旁白","text":"潮童把燈芯放在你掌心，期待的目光像潮汐般起伏。"},
       {"t":"CALL_MEDIATION","npcId":"npc_fisher_head"},
+      {"t":"TEXT","who":"旁白","text":"漁戶老大帶著族人點燃魚燈，遠海亮起一串串回家的路。"},
       {"t":"END"}
     ]
   }
