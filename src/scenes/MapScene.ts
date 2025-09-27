@@ -242,15 +242,25 @@ export default class MapScene extends ModuleScene {
     }
 
     candidateStories.forEach((story, index) => {
+      const finished = this.isStoryFinished(story);
       const text = this.add
-        .text(storyStartX, storyStartY + index * 32, `・${story.id}`, {
-          fontSize: '20px',
-          color: '#aaf'
-        })
+        .text(
+          storyStartX,
+          storyStartY + index * 32,
+          `・${story.id}${finished ? '（已完成）' : ''}`,
+          {
+            fontSize: '20px',
+            color: finished ? '#777' : '#aaf'
+          }
+        )
         .setOrigin(0, 0)
-        .setInteractive({ useHandCursor: true });
+        .setInteractive({ useHandCursor: !finished });
 
       text.on('pointerup', () => {
+        if (this.isStoryFinished(story)) {
+          this.showMessage('劇情已完成');
+          return;
+        }
         void this.launchStory(story, text);
       });
 
@@ -261,6 +271,12 @@ export default class MapScene extends ModuleScene {
   private async launchStory(story: StoryNode, text: Phaser.GameObjects.Text) {
     if (!this.router) {
       this.showMessage('無法啟動劇情：缺少路由');
+      return;
+    }
+
+    if (this.isStoryFinished(story)) {
+      this.showMessage('劇情已完成');
+      this.refreshStoryList();
       return;
     }
 
@@ -331,5 +347,11 @@ export default class MapScene extends ModuleScene {
     const clearedSpirits = this.world?.data?.已安息靈 ?? [];
     const serviceSpirit = anchor.服務靈;
     return !!serviceSpirit && clearedSpirits.includes(serviceSpirit);
+  }
+
+  private isStoryFinished(story: StoryNode): boolean {
+    const flagKey = `story:${story.id}`;
+    const flags = this.world?.data?.旗標 ?? {};
+    return Boolean(flags[flagKey]);
   }
 }

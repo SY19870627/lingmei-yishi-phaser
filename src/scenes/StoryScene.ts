@@ -39,6 +39,8 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
   private textBox!: Phaser.GameObjects.Text;
   private promptText!: Phaser.GameObjects.Text;
   private skipNextMediationStep = false;
+  private storyId?: string;
+  private storyLoaded = false;
 
   constructor() {
     super('StoryScene');
@@ -78,6 +80,8 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
       return;
     }
 
+    this.storyId = storyId;
+
     this.repo = this.registry.get('repo') as DataRepo | undefined;
     this.world = this.registry.get('world') as WorldState | undefined;
     this.router = this.registry.get('router') as Router | undefined;
@@ -96,6 +100,7 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
       }
 
       this.steps = story.steps ?? [];
+      this.storyLoaded = true;
       if (!this.steps.length) {
         this.finishStory();
         return;
@@ -319,6 +324,12 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
       return;
     }
     this.finished = true;
+    if (this.storyLoaded && this.storyId && this.world) {
+      const flagKey = `story:${this.storyId}`;
+      this.world.setFlag(flagKey, true);
+      this.flagsUpdated.add(flagKey);
+    }
+
     this.done({ flagsUpdated: Array.from(this.flagsUpdated) });
   }
 }
