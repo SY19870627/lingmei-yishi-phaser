@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { ModuleScene } from '@core/Router';
+import { ModuleScene, Router } from '@core/Router';
 import { DataRepo } from '@core/DataRepo';
 import { WorldState } from '@core/WorldState';
 
@@ -18,6 +18,7 @@ export default class MapScene extends ModuleScene {
 
     const repo = this.registry.get('repo') as DataRepo | undefined;
     const world = this.registry.get('world') as WorldState | undefined;
+    const router = this.registry.get('router') as Router | undefined;
 
     const currentLocation = world?.data?.位置 ?? '未知';
     const flagEntries = Object.entries(world?.data?.旗標 ?? {});
@@ -60,6 +61,13 @@ export default class MapScene extends ModuleScene {
       })
       .setOrigin(0, 1);
 
+    const storyStatus = this.add
+      .text(width / 2, height - 48, '', {
+        fontSize: '16px',
+        color: '#fff'
+      })
+      .setOrigin(0.5, 1);
+
     const saveButton = this.add
       .text(width - 16, 16, '存檔', {
         fontSize: '18px',
@@ -74,6 +82,32 @@ export default class MapScene extends ModuleScene {
         saver.save(0);
       }
       saveMessage.setText('已存檔');
+    });
+
+    const storyButton = this.add
+      .text(width - 16, 56, '啟動劇情 story_wang_01', {
+        fontSize: '18px',
+        color: '#aaf'
+      })
+      .setOrigin(1, 0)
+      .setInteractive({ useHandCursor: true });
+
+    storyButton.on('pointerup', async () => {
+      if (!router) {
+        storyStatus.setText('無法啟動劇情：缺少路由');
+        return;
+      }
+
+      storyButton.disableInteractive();
+      storyStatus.setText('劇情進行中……');
+      try {
+        await router.push('StoryScene', { storyId: 'story_wang_01' });
+        storyStatus.setText('劇情已完成');
+      } catch (error) {
+        storyStatus.setText('劇情未完成');
+      } finally {
+        storyButton.setInteractive({ useHandCursor: true });
+      }
     });
   }
 
