@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "WordCardList",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["id", "字", "標籤"],
+    "properties": {
+      "id": { "type": "string" },
+      "字": { "type": "string" },
+      "標籤": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "enum": ["安撫", "提問", "交換", "儀式", "指認"]
+        },
+        "minItems": 1,
+        "uniqueItems": true
+      },
+      "備註": { "type": "string" }
+    }
+  }
+}

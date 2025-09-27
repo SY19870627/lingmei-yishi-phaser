@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "StoryList",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["id", "anchor", "steps"],
+    "properties": {
+      "id": { "type": "string" },
+      "anchor": { "type": "string" },
+      "steps": {
+        "type": "array",
+        "items": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["t", "who", "text"],
+              "properties": {
+                "t": { "const": "TEXT" },
+                "who": { "type": "string", "enum": ["旁白", "亡魂", "NPC", "玩家"] },
+                "text": { "type": "string" },
+                "updates": {
+                  "type": "array",
+                  "items": { "type": "string" }
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["t", "spiritId"],
+              "properties": {
+                "t": { "const": "CALL_GHOST_COMM" },
+                "spiritId": { "type": "string" }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["t", "npcId"],
+              "properties": {
+                "t": { "const": "CALL_MEDIATION" },
+                "npcId": { "type": "string" }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["t", "itemId"],
+              "properties": {
+                "t": { "const": "GIVE_ITEM" },
+                "itemId": { "type": "string" }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["t", "flag", "value"],
+              "properties": {
+                "t": { "const": "UPDATE_FLAG" },
+                "flag": { "type": "string" },
+                "value": {}
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["t"],
+              "properties": {
+                "t": { "const": "END" }
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

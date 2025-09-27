@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SpiritList",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["id", "名", "年代", "場域_anchor", "初始狀態", "煞氣", "背景", "執念"],
+    "properties": {
+      "id": { "type": "string" },
+      "名": { "type": "string" },
+      "年代": { "type": "string" },
+      "場域_anchor": { "type": "string" },
+      "初始狀態": { "type": "string", "enum": ["現身", "失我"] },
+      "煞氣": { "type": "string", "enum": ["清", "濁", "沸"] },
+      "背景": { "type": "string" },
+      "執念": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "名", "條件", "狀態"],
+          "properties": {
+            "id": { "type": "string" },
+            "名": { "type": "string" },
+            "條件": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "狀態": {
+              "type": "string",
+              "enum": ["未解", "鬆動", "已解"]
+            }
+          }
+        }
+      },
+      "特例": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["類型"],
+        "properties": {
+          "類型": { "type": "string", "enum": ["失我靈", "拒談靈"] },
+          "關鍵物": { "type": "string" },
+          "關鍵人物": { "type": "string" },
+          "拒談觸發": { "type": "string" }
+        }
+      },
+      "限制": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["唯一性鍵"],
+        "properties": {
+          "唯一性鍵": {
+            "type": "array",
+            "items": { "type": "string" },
+            "minItems": 1,
+            "uniqueItems": true
+          }
+        }
+      }
+    }
+  }
+}
