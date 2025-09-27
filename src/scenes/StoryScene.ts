@@ -211,9 +211,18 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
         this.showToast(`靈體溝通完成，煞氣：${miasma}\n${resolvedSummary}`);
 
         if (result?.needPerson) {
+          const needPerson = result.needPerson;
+          if (!this.router) {
+            this.showToast('缺少路由，無法調解。');
+            return;
+          }
           this.skipNextMediationStep = true;
           try {
-            await this.runMediation(result.needPerson);
+            const mediationResult = await this.router.push<{ npcId: string }, MediationResult>(
+              'MediationScene',
+              { npcId: needPerson }
+            );
+            this.processMediationResult(mediationResult);
           } catch (error) {
             console.error(error);
             this.showToast('調解未完成。');
@@ -235,7 +244,7 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
       return;
     }
 
-    void this.runMediation(step.npcId)
+    void this.pushMediationScene(step.npcId)
       .catch(() => {
         this.showToast('調解未完成。');
       })
@@ -244,7 +253,7 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
       });
   }
 
-  private async runMediation(npcId: string) {
+  private async pushMediationScene(npcId: string) {
     if (!this.router) {
       throw new Error('缺少路由，無法調解');
     }
@@ -253,6 +262,10 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
       npcId
     });
 
+    this.processMediationResult(result);
+  }
+
+  private processMediationResult(result: MediationResult) {
     const resolved = Array.isArray(result.resolved) ? result.resolved : [];
     const world = this.world;
     if (resolved.length && world) {
