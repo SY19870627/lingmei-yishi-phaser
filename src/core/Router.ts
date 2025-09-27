@@ -4,6 +4,7 @@ export type RouteCtx<TIn=any,TOut=any> = { in?: TIn; resolve: (r:TOut)=>void; re
 type StackEntry = {
   key: string;
   pausedKey?: string;
+  pausedVisible?: boolean;
 };
 
 export class Router {
@@ -17,12 +18,16 @@ export class Router {
       const activeScenes = this.game.scene.getScenes(true);
       const topScene = activeScenes[activeScenes.length - 1] as Phaser.Scene | undefined;
       let pausedKey: string | undefined;
+      let pausedVisible: boolean | undefined;
       if (topScene && topScene.scene.isActive()) {
-        pausedKey = topScene.scene.key;
-        topScene.scene.pause();
+        const scenePlugin = topScene.scene;
+        pausedKey = scenePlugin.key;
+        pausedVisible = scenePlugin.isVisible();
+        scenePlugin.pause();
+        scenePlugin.setVisible(false);
       }
 
-      const entry: StackEntry = { key, pausedKey };
+      const entry: StackEntry = { key, pausedKey, pausedVisible };
       this.stack.push(entry);
       this.game.scene.run(key, { __route__: { in: input, resolve, reject } as RouteCtx<TIn,TOut> });
 
@@ -35,8 +40,14 @@ export class Router {
 
         if (entry.pausedKey) {
           const pausedScene = this.game.scene.getScene(entry.pausedKey) as Phaser.Scene | undefined;
-          if (pausedScene && pausedScene.scene.isPaused()) {
-            pausedScene.scene.resume();
+          if (pausedScene) {
+            const scenePlugin = pausedScene.scene;
+            if (scenePlugin.isPaused()) {
+              scenePlugin.resume();
+            }
+            if (entry.pausedVisible !== undefined) {
+              scenePlugin.setVisible(entry.pausedVisible);
+            }
           }
         }
       });
