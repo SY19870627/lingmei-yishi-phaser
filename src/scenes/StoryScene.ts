@@ -9,12 +9,14 @@ type StoryGiveItemStep = { t: 'GIVE_ITEM'; itemId: string; message?: string };
 type StoryUpdateFlagStep = { t: 'UPDATE_FLAG'; flag: string; value: unknown };
 type StoryEndStep = { t: 'END' };
 type StoryCallGhostCommStep = { t: 'CALL_GHOST_COMM'; spiritId: string };
+type StoryCallMediationStep = { t: 'CALL_MEDIATION'; npcId: string };
 type StoryStep =
   | StoryTextStep
   | StoryGiveItemStep
   | StoryUpdateFlagStep
   | StoryEndStep
   | StoryCallGhostCommStep
+  | StoryCallMediationStep
   | { t: string; [key: string]: unknown };
 
 type StoryNode = {
@@ -23,6 +25,7 @@ type StoryNode = {
 };
 
 type GhostCommResult = { resolvedKnots: string[]; miasma: string };
+type MediationResult = { npcId: string; stage: string; resolved: string[] };
 
 export default class StoryScene extends ModuleScene<{ storyId: string }, { flagsUpdated: string[] }> {
   private steps: StoryStep[] = [];
@@ -130,6 +133,12 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
             return;
           }
           break;
+        case 'CALL_MEDIATION':
+          if (this.isCallMediationStep(step)) {
+            this.handleCallMediation(step);
+            return;
+          }
+          break;
         case 'END':
           this.finishStory();
           return;
@@ -191,6 +200,38 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
       });
   }
 
+  private handleCallMediation(step: StoryCallMediationStep) {
+    if (!this.router || !step.npcId) {
+      this.showToast('無法進行調解。');
+      return;
+    }
+
+    void this.router
+      .push<{ npcId: string }, MediationResult>('MediationScene', {
+        npcId: step.npcId
+      })
+      .then((result) => {
+        const resolved = Array.isArray(result.resolved) ? result.resolved : [];
+        const world = this.world;
+        if (resolved.length && world) {
+          resolved.forEach((obsessionId) => {
+            if (!obsessionId) {
+              return;
+            }
+            world.data.旗標[`obsession:${obsessionId}`] = '已解';
+          });
+        }
+        const summary = resolved.length ? `已解決：${resolved.join('、')}` : '仍待努力';
+        this.showToast(`調解階段：${result.stage}\n${summary}`);
+      })
+      .catch(() => {
+        this.showToast('調解未完成。');
+      })
+      .finally(() => {
+        this.advance();
+      });
+  }
+
   private isTextStep(step: StoryStep): step is StoryTextStep {
     return step.t === 'TEXT' && typeof (step as Partial<StoryTextStep>).text === 'string';
   }
@@ -205,6 +246,10 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
 
   private isCallGhostCommStep(step: StoryStep): step is StoryCallGhostCommStep {
     return step.t === 'CALL_GHOST_COMM' && typeof (step as Partial<StoryCallGhostCommStep>).spiritId === 'string';
+  }
+
+  private isCallMediationStep(step: StoryStep): step is StoryCallMediationStep {
+    return step.t === 'CALL_MEDIATION' && typeof (step as Partial<StoryCallMediationStep>).npcId === 'string';
   }
 
   private showToast(message: string) {
