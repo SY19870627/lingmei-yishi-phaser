@@ -2,22 +2,27 @@ import Phaser from 'phaser';
 import { ModuleScene } from '@core/Router';
 import type { DataRepo } from '@core/DataRepo';
 import type { WorldState } from '@core/WorldState';
+import type { Router } from '@core/Router';
 
 type StoryTextStep = { t: 'TEXT'; who?: string; text: string };
 type StoryGiveItemStep = { t: 'GIVE_ITEM'; itemId: string; message?: string };
 type StoryUpdateFlagStep = { t: 'UPDATE_FLAG'; flag: string; value: unknown };
 type StoryEndStep = { t: 'END' };
+type StoryCallGhostCommStep = { t: 'CALL_GHOST_COMM'; spiritId: string };
 type StoryStep =
   | StoryTextStep
   | StoryGiveItemStep
   | StoryUpdateFlagStep
   | StoryEndStep
+  | StoryCallGhostCommStep
   | { t: string; [key: string]: unknown };
 
 type StoryNode = {
   id: string;
   steps: StoryStep[];
 };
+
+type GhostCommResult = { resolvedKnots: string[]; miasma: string };
 
 export default class StoryScene extends ModuleScene<{ storyId: string }, { flagsUpdated: string[] }> {
   private steps: StoryStep[] = [];
@@ -26,6 +31,8 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
   private finished = false;
   private flagsUpdated = new Set<string>();
   private world?: WorldState;
+  private repo?: DataRepo;
+  private router?: Router;
   private textBox!: Phaser.GameObjects.Text;
   private promptText!: Phaser.GameObjects.Text;
 
@@ -67,16 +74,17 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
       return;
     }
 
-    const repo = this.registry.get('repo') as DataRepo | undefined;
+    this.repo = this.registry.get('repo') as DataRepo | undefined;
     this.world = this.registry.get('world') as WorldState | undefined;
+    this.router = this.registry.get('router') as Router | undefined;
 
-    if (!repo) {
+    if (!this.repo) {
       this.showErrorAndExit('缺少資料倉庫，無法讀取劇情。');
       return;
     }
 
     try {
-      const stories = await repo.get<StoryNode[]>('stories');
+      const stories = await this.repo.get<StoryNode[]>('stories');
       const story = stories.find((node) => node.id === storyId);
       if (!story) {
         this.showErrorAndExit('找不到指定的劇情節點。');
@@ -116,6 +124,12 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
             this.handleUpdateFlag(step);
           }
           break;
+        case 'CALL_GHOST_COMM':
+          if (this.isCallGhostCommStep(step)) {
+            this.handleCallGhostComm(step);
+            return;
+          }
+          break;
         case 'END':
           this.finishStory();
           return;
@@ -153,6 +167,30 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
     this.flagsUpdated.add(step.flag);
   }
 
+  private handleCallGhostComm(step: StoryCallGhostCommStep) {
+    if (!this.router || !step.spiritId) {
+      this.showToast('無法呼叫靈體溝通。');
+      return;
+    }
+
+    void this.router
+      .push<{ spiritId: string }, GhostCommResult>('GhostCommScene', {
+        spiritId: step.spiritId
+      })
+      .then((result) => {
+        const resolvedSummary = result.resolvedKnots.length
+          ? `已解結：${result.resolvedKnots.join('、')}`
+          : '尚未解結';
+        this.showToast(`靈體溝通完成，煞氣：${result.miasma}\n${resolvedSummary}`);
+      })
+      .catch(() => {
+        this.showToast('靈體溝通未完成。');
+      })
+      .finally(() => {
+        this.advance();
+      });
+  }
+
   private isTextStep(step: StoryStep): step is StoryTextStep {
     return step.t === 'TEXT' && typeof (step as Partial<StoryTextStep>).text === 'string';
   }
@@ -165,6 +203,10 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
     return step.t === 'UPDATE_FLAG' && typeof (step as Partial<StoryUpdateFlagStep>).flag === 'string';
   }
 
+  private isCallGhostCommStep(step: StoryStep): step is StoryCallGhostCommStep {
+    return step.t === 'CALL_GHOST_COMM' && typeof (step as Partial<StoryCallGhostCommStep>).spiritId === 'string';
+  }
+
   private showToast(message: string) {
     const { width, height } = this.scale;
     const toast = this.add
@@ -172,7 +214,8 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
         fontSize: '16px',
         color: '#fff',
         backgroundColor: '#000000aa',
-        padding: { x: 12, y: 6 }
+        padding: { x: 12, y: 6 },
+        wordWrap: { width: width / 2 }
       })
       .setOrigin(1, 1);
 
