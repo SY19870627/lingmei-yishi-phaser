@@ -1,4 +1,8 @@
 [
   {"id":"anchor_zu_cuo_hall","地點":"王家祖厝廳堂","條件":["持有:it_wang_beads"],"服務靈":"spirit_wang_ayi",
-   "完成後":{"裝飾":"供桌留一碗熱飯","回聲腳本":"風鈴輕響"}}
+   "完成後":{"裝飾":"供桌留一碗熱飯","回聲腳本":"風鈴輕響"}},
+  {"id":"anchor_old_well_courtyard","地點":"李家古井旁","條件":[],"服務靈":"spirit_liang_sister",
+   "完成後":{"裝飾":"井欄重新綁上紅繩","回聲腳本":"井水滴答"}},
+  {"id":"anchor_seaside_altar","地點":"外海祭壇","條件":["持有:it_grandma_amulet"],"服務靈":"spirit_fisher_child",
+   "完成後":{"裝飾":"放置海鹽與海螺","回聲腳本":"潮聲覆來"}}
 ]

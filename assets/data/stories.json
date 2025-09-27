@@ -8,5 +8,27 @@
       {"t":"CALL_MEDIATION","npcId":"npc_wang_shushu"},
       {"t":"END"}
     ]
+  },
+  {
+    "id":"story_liang_01","anchor":"anchor_old_well_courtyard",
+    "steps":[
+      {"t":"TEXT","who":"旁白","text":"古井旁潮氣陣陣，陰影如水漾開。"},
+      {"t":"TEXT","who":"井靈","text":"有人堵住了我的喉嚨。"},
+      {"t":"CALL_GHOST_COMM","spiritId":"spirit_liang_sister"},
+      {"t":"CALL_MEDIATION","npcId":"npc_liang_uncle"},
+      {"t":"UPDATE_FLAG","flag":"liang_well_cleansed","value":true},
+      {"t":"END"}
+    ]
+  },
+  {
+    "id":"story_fisher_01","anchor":"anchor_seaside_altar",
+    "steps":[
+      {"t":"TEXT","who":"旁白","text":"海風吹過荒廢的祭壇，鹹味刺入喉間。"},
+      {"t":"TEXT","who":"潮童","text":"魚燈沒亮，他們找不到回家的路。"},
+      {"t":"GIVE_ITEM","itemId":"it_sea_lantern","message":"獲得潮童留下的『潮返燈芯』"},
+      {"t":"CALL_GHOST_COMM","spiritId":"spirit_fisher_child"},
+      {"t":"CALL_MEDIATION","npcId":"npc_fisher_head"},
+      {"t":"END"}
+    ]
   }
 ]
