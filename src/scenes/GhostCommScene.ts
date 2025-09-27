@@ -33,6 +33,7 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
   private consecutiveAccusations = 0;
   private lastAccusationKey?: string;
   private concluded = false;
+  private bus?: Phaser.Events.EventEmitter;
 
   constructor() {
     super('GhostCommScene');
@@ -43,6 +44,7 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
     this.repo = this.registry.get('repo') as DataRepo | undefined;
     this.world = this.registry.get('world') as WorldState | undefined;
     this.aio = this.registry.get('aio') as AiOrchestrator | undefined;
+    this.bus = this.registry.get('bus') as Phaser.Events.EventEmitter | undefined;
 
     if (!spiritId || !this.repo || !this.world || !this.aio) {
       this.showErrorAndExit('缺少必要資料，無法進行靈體溝通。');
@@ -460,6 +462,7 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
       result.needPerson = overrides.needPerson ?? null;
     }
 
+    this.bus?.emit('autosave');
     this.done(result);
   }
 

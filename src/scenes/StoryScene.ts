@@ -46,6 +46,7 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
   private activeSpiritId?: string;
   private spiritsLoaded = false;
   private spiritCache = new Map<string, Spirit>();
+  private bus?: Phaser.Events.EventEmitter;
 
   constructor() {
     super('StoryScene');
@@ -90,6 +91,7 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
     this.repo = this.registry.get('repo') as DataRepo | undefined;
     this.world = this.registry.get('world') as WorldState | undefined;
     this.router = this.registry.get('router') as Router | undefined;
+    this.bus = this.registry.get('bus') as Phaser.Events.EventEmitter | undefined;
 
     if (!this.repo) {
       this.showErrorAndExit('缺少資料倉庫，無法讀取劇情。');
@@ -410,6 +412,7 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
       this.flagsUpdated.add(flagKey);
     }
 
+    this.bus?.emit('autosave');
     this.done({ flagsUpdated: Array.from(this.flagsUpdated) });
   }
 }
