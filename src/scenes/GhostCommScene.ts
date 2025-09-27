@@ -4,14 +4,16 @@ import type { DataRepo } from '@core/DataRepo';
 import type { AiOrchestrator } from '@core/AiOrchestrator';
 import type { Spirit, WordCard, GhostOption } from '@core/Types';
 import type { WorldState } from '@core/WorldState';
+import KnotTag from '@ui/KnotTag';
+import type { KnotState } from '@ui/KnotTag';
 
 interface GhostCommResult {
   resolvedKnots?: string[];
   miasma?: string;
-  needPerson?: string;
+  needPerson?: string | null;
 }
 
-type ObsessionState = '鬆動' | '已解';
+type ObsessionState = KnotState;
 
 export default class GhostCommScene extends ModuleScene<{ spiritId: string }, GhostCommResult> {
   private repo?: DataRepo;
@@ -26,9 +28,12 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
   private feedbackText?: Phaser.GameObjects.Text;
 
   private obsessionState = new Map<string, ObsessionState>();
+  private knotTags = new Map<string, KnotTag>();
   private loadingOptions = false;
   private consecutiveAccusations = 0;
-  private pendingNeedPerson?: string;
+  private lastAccusationKey?: string;
+  private concluded = false;
+  private bus?: Phaser.Events.EventEmitter;
 
   constructor() {
     super('GhostCommScene');
@@ -39,6 +44,7 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
     this.repo = this.registry.get('repo') as DataRepo | undefined;
     this.world = this.registry.get('world') as WorldState | undefined;
     this.aio = this.registry.get('aio') as AiOrchestrator | undefined;
+    this.bus = this.registry.get('bus') as Phaser.Events.EventEmitter | undefined;
 
     if (!spiritId || !this.repo || !this.world || !this.aio) {
       this.showErrorAndExit('缺少必要資料，無法進行靈體溝通。');
@@ -56,6 +62,8 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
         this.showErrorAndExit('找不到指定靈體。');
         return;
       }
+
+      this.initializeObsessionState();
 
       this.wordCards = wordcards;
       this.buildLayout();
@@ -104,8 +112,49 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
       this.finish();
     });
 
+    this.buildObsessionTags();
     this.buildWordCardList(width);
     this.buildOptionsPanel(width, height);
+  }
+
+  private initializeObsessionState() {
+    if (!this.spirit) {
+      return;
+    }
+
+    const worldFlags = this.world?.data.旗標 ?? {};
+    this.spirit.執念?.forEach((obsession) => {
+      const flagState = worldFlags[`obsession:${obsession.id}`];
+      const initialState = (flagState as ObsessionState) || obsession.狀態 || '未解';
+      const normalized: ObsessionState = initialState === '已解' ? '已解' : initialState === '鬆動' ? '鬆動' : '未解';
+      this.obsessionState.set(obsession.id, normalized);
+    });
+  }
+
+  private buildObsessionTags() {
+    if (!this.spirit) {
+      return;
+    }
+
+    const listX = 32;
+    const listTop = 150;
+    const spacing = 52;
+
+    this.add
+      .text(listX, 120, '她的執念', {
+        fontSize: '20px',
+        color: '#fff'
+      })
+      .setOrigin(0, 0);
+
+    this.spirit.執念.forEach((obsession, index) => {
+      const state = this.obsessionState.get(obsession.id) ?? '未解';
+      const tag = new KnotTag(this, listX, listTop + index * spacing, {
+        text: obsession.名 ?? obsession.id,
+        state
+      });
+      this.knotTags.set(obsession.id, tag);
+    });
   }
 
   private buildWordCardList(width: number) {
@@ -176,6 +225,8 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
       return;
     }
     this.loadingOptions = true;
+    this.consecutiveAccusations = 0;
+    this.lastAccusationKey = undefined;
 
     this.setOptionsText(['載入選項中……']);
 
@@ -278,7 +329,7 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
   }
 
   private applyOption(option: GhostOption) {
-    if (!this.world) {
+    if (!this.world || this.concluded) {
       return;
     }
 
@@ -286,13 +337,25 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
     const optionType = String(option.type ?? '');
 
     if (optionType === '指認') {
-      this.consecutiveAccusations += 1;
-      if (this.consecutiveAccusations >= 2) {
-        this.handleSilence();
-        return;
+      const key = this.buildTargetKey(option.targets);
+      if (key) {
+        if (this.lastAccusationKey === key) {
+          this.consecutiveAccusations += 1;
+        } else {
+          this.consecutiveAccusations = 1;
+          this.lastAccusationKey = key;
+        }
+        if (this.consecutiveAccusations >= 2) {
+          this.triggerRefusal();
+          return;
+        }
+      } else {
+        this.consecutiveAccusations = 1;
+        this.lastAccusationKey = undefined;
       }
     } else {
       this.consecutiveAccusations = 0;
+      this.lastAccusationKey = undefined;
     }
 
     if (effect === '平煞') {
@@ -309,12 +372,25 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
           return;
         }
         const nextState: ObsessionState = effect === '解結' ? '已解' : '鬆動';
-        const current = this.obsessionState.get(id);
+        const current = this.obsessionState.get(id) ?? '未解';
         if (current === '已解') {
           return;
         }
         this.obsessionState.set(id, nextState);
+        const tag = this.knotTags.get(id);
+        if (tag) {
+          if (effect === '解結') {
+            tag.setState('已解');
+          } else {
+            tag.setState('鬆動');
+          }
+        }
       });
+
+      if (effect === '解結' && this.areAllKnotsResolved()) {
+        this.finalizeCommunication();
+        return;
+      }
     }
 
     const summaryParts: string[] = [];
@@ -322,20 +398,20 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
       summaryParts.push(`效果：${effect}`);
     }
     if (Array.isArray(option.targets) && option.targets.length) {
-      summaryParts.push(`影響執念：${option.targets.join('、')}`);
+      summaryParts.push(`影響執念：${this.describeTargets(option.targets)}`);
     }
     this.feedbackText?.setText(summaryParts.join('\n'));
     this.statusText?.setText(this.getStatusSummary());
   }
 
-  private handleSilence() {
-    this.pendingNeedPerson = 'npc_wang_shushu';
+  private triggerRefusal() {
+    const needPerson = this.spirit?.特例?.關鍵人物 ?? null;
     this.feedbackText?.setText('她沉默了');
     if (this.input) {
       this.input.enabled = false;
     }
     this.time.delayedCall(400, () => {
-      this.concludeCommunication({ needPerson: this.pendingNeedPerson });
+      this.finalizeCommunication({ needPerson });
     });
   }
 
@@ -343,7 +419,12 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
     const miasma = this.world?.data.煞氣 ?? '未知';
     const obsEntries = Array.from(this.obsessionState.entries());
     const obsText = obsEntries.length
-      ? obsEntries.map(([id, state]) => `${id}: ${state}`).join('\n')
+      ? obsEntries
+          .map(([id, state]) => {
+            const name = this.spirit?.執念.find((obs) => obs.id === id)?.名 ?? id;
+            return `${name}: ${state}`;
+          })
+          .join('\n')
       : '尚未撫平任何執念';
     return `目前煞氣：${miasma}\n執念狀態：\n${obsText}`;
   }
@@ -356,20 +437,32 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
   }
 
   private finish() {
-    this.concludeCommunication();
+    this.finalizeCommunication();
   }
 
-  private concludeCommunication(overrides: Partial<GhostCommResult> = {}) {
+  private finalizeCommunication(overrides: Partial<GhostCommResult> = {}) {
+    if (this.concluded) {
+      return;
+    }
+    this.concluded = true;
+    if (this.input) {
+      this.input.enabled = false;
+    }
+
     const resolved = Array.from(this.obsessionState.entries())
       .filter(([, state]) => state === '已解')
       .map(([id]) => id);
     const miasma = this.world?.data.煞氣 ?? '未知';
     const result: GhostCommResult = {
-      resolvedKnots: resolved,
-      miasma,
-      needPerson: this.pendingNeedPerson,
-      ...overrides
+      resolvedKnots: overrides.resolvedKnots ?? resolved,
+      miasma: overrides.miasma ?? miasma
     };
+
+    if ('needPerson' in overrides) {
+      result.needPerson = overrides.needPerson ?? null;
+    }
+
+    this.bus?.emit('autosave');
     this.done(result);
   }
 
@@ -385,7 +478,40 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
       .setOrigin(0.5);
 
     this.time.delayedCall(1200, () => {
-      this.concludeCommunication();
+      this.finalizeCommunication();
     });
+  }
+
+  private areAllKnotsResolved() {
+    if (!this.obsessionState.size) {
+      return false;
+    }
+    for (const state of this.obsessionState.values()) {
+      if (state !== '已解') {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private buildTargetKey(targets: unknown) {
+    if (!Array.isArray(targets) || !targets.length) {
+      return '';
+    }
+    return [...targets].sort().join('|');
+  }
+
+  private describeTargets(targets: unknown) {
+    if (!Array.isArray(targets) || !targets.length) {
+      return '無';
+    }
+    return targets
+      .map((id) => {
+        if (typeof id !== 'string') {
+          return String(id ?? '未知');
+        }
+        return this.spirit?.執念.find((obs) => obs.id === id)?.名 ?? id;
+      })
+      .join('、');
   }
 }

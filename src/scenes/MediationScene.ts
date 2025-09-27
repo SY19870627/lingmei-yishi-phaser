@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { ModuleScene } from '@core/Router';
 import type { DataRepo } from '@core/DataRepo';
 import type { NPC } from '@core/Types';
+import type { WorldState } from '@core/WorldState';
 
 type Stage = '抗拒' | '猶豫' | '願試' | '承諾';
 
@@ -9,22 +10,27 @@ type MediationResult = { npcId: string; stage: Stage; resolved: string[] };
 
 export default class MediationScene extends ModuleScene<{ npcId: string }, MediationResult> {
   private repo?: DataRepo;
+  private world?: WorldState;
   private npc?: NPC;
 
-  private stageFlow: Stage[] = ['抗拒', '猶豫', '願試', '承諾'];
   private currentStage: Stage = '抗拒';
 
   private stageText?: Phaser.GameObjects.Text;
   private inputBox?: Phaser.GameObjects.Rectangle;
   private inputText?: Phaser.GameObjects.Text;
   private responseText?: Phaser.GameObjects.Text;
+  private commitmentHint?: Phaser.GameObjects.Text;
+  private commitmentButton?: Phaser.GameObjects.Text;
 
   private typing = false;
   private inputValue = '';
+  private questCompleted = false;
+  private finished = false;
 
-  private readonly negativeKeywords = ['笨', '小氣', '吝嗇', '討厭'];
-  private readonly actionKeywords = ['今晚', '明天', '買', '一起', '準備', '安排', '試試'];
-  private readonly trustKeywords = ['不讓外人知道', '給你面子', '保密', '替你擋'];
+  private readonly stageOrder: Stage[] = ['抗拒', '猶豫', '願試', '承諾'];
+  private readonly sincerityKeywords = ['一起', '今晚', '明天', '買', '準備', '擺'];
+  private readonly faceSavingKeywords = ['別讓外人知道', '體面', '不出聲'];
+  private readonly disparagingKeywords = ['小氣', '笨', '欠'];
 
   constructor() {
     super('MediationScene');
@@ -33,6 +39,7 @@ export default class MediationScene extends ModuleScene<{ npcId: string }, Media
   async create() {
     const npcId = this.route?.in?.npcId;
     this.repo = this.registry.get('repo') as DataRepo | undefined;
+    this.world = this.registry.get('world') as WorldState | undefined;
 
     if (!npcId || !this.repo) {
       this.showErrorAndExit('缺少必要資料，無法進行調解。', npcId ?? '');
@@ -46,16 +53,7 @@ export default class MediationScene extends ModuleScene<{ npcId: string }, Media
         this.showErrorAndExit('找不到指定 NPC。', npcId);
         return;
       }
-
-      if (Array.isArray(this.npc.轉折階段) && this.npc.轉折階段.length) {
-        const filtered = this.npc.轉折階段.filter((stage): stage is Stage =>
-          stage === '抗拒' || stage === '猶豫' || stage === '願試' || stage === '承諾'
-        );
-        if (filtered.length) {
-          this.stageFlow = filtered;
-        }
-      }
-      this.currentStage = this.stageFlow[0] ?? '抗拒';
+      this.currentStage = '抗拒';
 
       this.buildLayout();
       this.registerKeyboard();
@@ -143,11 +141,37 @@ export default class MediationScene extends ModuleScene<{ npcId: string }, Media
       })
       .setOrigin(0.5, 0);
 
+    this.commitmentHint = this.add
+      .text(width / 2, height / 2 + 220, '供桌還得準備些什麼？', {
+        fontSize: '18px',
+        color: '#ffd9a8',
+        wordWrap: { width: width * 0.6 },
+        align: 'center'
+      })
+      .setOrigin(0.5, 0)
+      .setVisible(false);
+
+    this.commitmentButton = this.add
+      .text(width / 2, height / 2 + 270, '擺上熱飯', {
+        fontSize: '22px',
+        color: '#ffebc2'
+      })
+      .setOrigin(0.5, 0)
+      .setVisible(false);
+    this.commitmentButton.disableInteractive();
+
     this.input.on('pointerup', (_pointer: Phaser.Input.Pointer, currentlyOver: Phaser.GameObjects.GameObject[]) => {
       if (!currentlyOver.includes(this.inputBox as Phaser.GameObjects.GameObject)) {
         this.typing = false;
         this.updateInputFocus();
       }
+    });
+
+    this.commitmentButton.on('pointerup', () => {
+      if (!this.commitmentButton?.visible || !this.commitmentButton.input?.enabled) {
+        return;
+      }
+      this.completeCommitmentTask();
     });
   }
 
@@ -209,48 +233,81 @@ export default class MediationScene extends ModuleScene<{ npcId: string }, Media
       return;
     }
 
-    const delta = this.evaluateMessage(message);
-    const applied = this.applyStageDelta(delta);
-    this.showResponse(this.composeReply(applied));
+    const score = this.evaluateMessage(message);
+    const previousStage = this.currentStage;
+    this.advanceStage(score);
+    const stageChanged = previousStage !== this.currentStage;
+    this.showResponse(this.composeReply(score, stageChanged));
 
     this.inputValue = '';
     this.typing = false;
-    this.updateStageText();
     this.updateInputFocus();
+    this.updateInputText();
+    this.updateStageText();
   }
 
   private evaluateMessage(message: string) {
-    const normalized = message.replace(/\s+/g, '');
-    if (this.negativeKeywords.some((word) => normalized.includes(word))) {
-      return 0;
-    }
+    const trimmed = message.replace(/\s+/g, '');
+    let score = 0;
 
-    const hasAction = this.actionKeywords.some((word) => message.includes(word));
-    if (!hasAction) {
-      return 0;
-    }
+    score += this.countKeywordHits(trimmed, this.sincerityKeywords);
+    score += this.countKeywordHits(message, this.faceSavingKeywords);
+    score -= 2 * this.countKeywordHits(trimmed, this.disparagingKeywords);
 
-    let delta = 1;
-    if (this.trustKeywords.some((word) => message.includes(word))) {
-      delta += 1;
-    }
-    return delta;
+    return score;
   }
 
-  private applyStageDelta(delta: number) {
-    if (delta <= 0) {
-      return 0;
-    }
-    const currentIndex = this.stageFlow.indexOf(this.currentStage);
-    const newIndex = Math.min(this.stageFlow.length - 1, currentIndex + delta);
-    const applied = Math.max(0, newIndex - currentIndex);
-    this.currentStage = this.stageFlow[newIndex] ?? this.currentStage;
-    return applied;
+  private countKeywordHits(message: string, keywords: string[]) {
+    return keywords.reduce((count, keyword) => {
+      if (!keyword) {
+        return count;
+      }
+      const matches = message.split(keyword).length - 1;
+      return count + Math.max(0, matches);
+    }, 0);
   }
 
-  private composeReply(applied: number) {
-    if (applied === 0) {
+  private advanceStage(score: number) {
+    if (score <= 0) {
+      return;
+    }
+
+    const target = this.stageForScore(score);
+    const currentIndex = this.stageOrder.indexOf(this.currentStage);
+    const targetIndex = this.stageOrder.indexOf(target);
+    if (targetIndex > currentIndex) {
+      this.currentStage = target;
+      this.updateStageText();
+      if (target === '承諾') {
+        this.showCommitmentTask();
+      }
+    }
+  }
+
+  private stageForScore(score: number): Stage {
+    if (score >= 3) {
+      return '承諾';
+    }
+    if (score === 2) {
+      return '願試';
+    }
+    return '猶豫';
+  }
+
+  private composeReply(score: number, stageChanged: boolean) {
+    if (score <= 0) {
       return '他皺眉：「別這樣說。」';
+    }
+
+    if (!stageChanged) {
+      switch (this.currentStage) {
+        case '猶豫':
+          return '他仍舊猶豫：「再給我點時間。」';
+        case '願試':
+          return '他沉吟不語，似乎還在盤算。';
+        default:
+          return '他低頭想了一會兒。';
+      }
     }
 
     switch (this.currentStage) {
@@ -273,9 +330,58 @@ export default class MediationScene extends ModuleScene<{ npcId: string }, Media
     this.stageText?.setText(`目前階段：${this.currentStage}`);
   }
 
+  private showCommitmentTask() {
+    if (this.questCompleted) {
+      return;
+    }
+
+    this.commitmentHint
+      ?.setText('他低聲提醒：「得讓供桌飄出熱氣。」')
+      .setVisible(true);
+
+    if (this.commitmentButton) {
+      this.commitmentButton
+        .setVisible(true)
+        .setColor('#ffe8b0')
+        .setInteractive({ useHandCursor: true })
+        .setAlpha(1);
+    }
+  }
+
+  private completeCommitmentTask() {
+    if (this.questCompleted) {
+      return;
+    }
+
+    this.questCompleted = true;
+    this.world?.setFlag('擺上熱飯', true);
+    this.commitmentHint?.setText('熱氣升騰，他鬆了口氣。');
+    if (this.commitmentButton) {
+      this.commitmentButton
+        .setText('已擺上熱飯')
+        .setColor('#ccc')
+        .disableInteractive()
+        .setAlpha(0.7);
+    }
+
+    this.showResponse('他鄭重其事地答應：「我會照辦。」');
+    this.finish();
+  }
+
   private finish() {
+    if (this.finished) {
+      return;
+    }
+
+    if (this.currentStage === '承諾' && !this.questCompleted) {
+      this.showCommitmentTask();
+      this.showResponse('先確定供桌上有熱飯，再來談結果。');
+      return;
+    }
+
     const resolved = this.currentStage === '承諾' ? ['e_offering', 'e_apology'] : [];
     const npcId = this.npc?.id ?? this.route?.in?.npcId ?? '';
+    this.finished = true;
     this.done({ npcId, stage: this.currentStage, resolved });
   }
 

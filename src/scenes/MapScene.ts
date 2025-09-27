@@ -4,6 +4,8 @@ import { DataRepo } from '@core/DataRepo';
 import { WorldState } from '@core/WorldState';
 import { SpawnDirector, type DirectedAnchor } from '@core/SpawnDirector';
 import type { Anchor, NPC, Spirit, StoryNode } from '@core/Types';
+import { GhostDirector } from '@core/GhostDirector';
+import HintsManager from '@core/HintsManager';
 
 type AnchorEntry = { anchor?: DirectedAnchor; text: Phaser.GameObjects.Text };
 type StoryEntry = { story?: StoryNode; text: Phaser.GameObjects.Text };
@@ -23,6 +25,7 @@ export default class MapScene extends ModuleScene {
   private storyEntries: StoryEntry[] = [];
   private director = new SpawnDirector();
   private accessibleAnchors: DirectedAnchor[] = [];
+  private hintIndicator?: Phaser.GameObjects.Container;
 
   constructor() {
     super('MapScene');
@@ -58,6 +61,16 @@ export default class MapScene extends ModuleScene {
         color: '#fff'
       })
       .setOrigin(0.5, 1);
+
+    const indicatorDot = this.add.circle(0, 0, 6, 0xff4d4d);
+    indicatorDot.setOrigin(0.5);
+    const indicatorLabel = this.add.text(12, -8, '有提示', {
+      fontSize: '16px',
+      color: '#fff'
+    });
+    indicatorLabel.setOrigin(0, 0);
+    this.hintIndicator = this.add.container(width - 140, 72, [indicatorDot, indicatorLabel]);
+    this.hintIndicator.setVisible(false);
 
     const closeButton = this.add
       .text(width - 16, height - 24, '返回', {
@@ -139,11 +152,12 @@ export default class MapScene extends ModuleScene {
 
     this.accessibleAnchors.forEach((anchor, index) => {
       const isCurrent = anchor.地點 === this.currentLocation;
-      const resolved = Boolean(anchor.meta?.resolved);
-      const label = `${anchor.地點}${resolved ? '（已送行）' : ''}`;
-      const color = resolved ? '#777' : isCurrent ? '#ff0' : '#aaf';
+      const ghostState = GhostDirector.getState(anchor.服務靈, this.world);
+      const resolved = ghostState === '安息' || Boolean(anchor.meta?.resolved);
+      const displayText = resolved ? '　' : `${isCurrent ? '★' : '・'}${anchor.地點}`;
+      const color = resolved ? '#444' : isCurrent ? '#ff0' : '#aaf';
       const text = this.add
-        .text(x, startY + index * 32, `${isCurrent ? '★' : '・'}${label}`, {
+        .text(x, startY + index * 32, displayText, {
           fontSize: '20px',
           color
         })
@@ -304,6 +318,7 @@ export default class MapScene extends ModuleScene {
     this.updateStatusLabel();
     this.renderLocationList(32, 168);
     this.renderStoryList();
+    this.updateHintIndicator();
   }
 
   private updateStatusLabel() {
@@ -346,7 +361,7 @@ export default class MapScene extends ModuleScene {
     return this.companionNames.get(id) ?? id;
   }
 
-  private canEnterLocation(locationName: string): boolean {
+  private canEnterLocation(_locationName: string): boolean {
     // 先用假條件：只有地點名稱包含「廳堂」時視為同行者願意進入。
     //return locationName.includes('廳堂');
     return true;
@@ -356,5 +371,14 @@ export default class MapScene extends ModuleScene {
     const flagKey = `story:${story.id}`;
     const flags = this.world?.data?.旗標 ?? {};
     return Boolean(flags[flagKey]);
+  }
+
+  private updateHintIndicator() {
+    if (!this.hintIndicator) {
+      return;
+    }
+
+    const hints = HintsManager.gather(this.world, this.spirits, this.anchors);
+    this.hintIndicator.setVisible(hints.length > 0);
   }
 }

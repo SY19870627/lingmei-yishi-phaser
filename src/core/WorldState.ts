@@ -7,4 +7,6 @@ export class WorldState {
   setFlag(k:string,v:any){ this.data.旗標[k]=v; }
   hasItem(id:string){ return this.data.物品.includes(id); }
   grantItem(id:string){ if(!this.hasItem(id)) this.data.物品.push(id); }
+  snapshot(): WorldStateData { return JSON.parse(JSON.stringify(this.data)) as WorldStateData; }
+  loadFrom(data: WorldStateData){ this.data = JSON.parse(JSON.stringify(data)) as WorldStateData; }
 }

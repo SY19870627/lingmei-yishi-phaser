@@ -3,6 +3,8 @@ import { ModuleScene } from '@core/Router';
 import type { DataRepo } from '@core/DataRepo';
 import type { WorldState } from '@core/WorldState';
 import type { Router } from '@core/Router';
+import { GhostDirector } from '@core/GhostDirector';
+import type { Spirit } from '@core/Types';
 
 type StoryTextStep = { t: 'TEXT'; who?: string; text: string };
 type StoryGiveItemStep = { t: 'GIVE_ITEM'; itemId: string; message?: string };
@@ -41,6 +43,10 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
   private skipNextMediationStep = false;
   private storyId?: string;
   private storyLoaded = false;
+  private activeSpiritId?: string;
+  private spiritsLoaded = false;
+  private spiritCache = new Map<string, Spirit>();
+  private bus?: Phaser.Events.EventEmitter;
 
   constructor() {
     super('StoryScene');
@@ -85,6 +91,7 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
     this.repo = this.registry.get('repo') as DataRepo | undefined;
     this.world = this.registry.get('world') as WorldState | undefined;
     this.router = this.registry.get('router') as Router | undefined;
+    this.bus = this.registry.get('bus') as Phaser.Events.EventEmitter | undefined;
 
     if (!this.repo) {
       this.showErrorAndExit('缺少資料倉庫，無法讀取劇情。');
@@ -135,6 +142,11 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
           break;
         case 'CALL_GHOST_COMM':
           if (this.isCallGhostCommStep(step)) {
+            const state = GhostDirector.getState(step.spiritId, this.world);
+            if (state === '安息' || state === '回聲') {
+              this.showToast(state === '安息' ? '靈體已安息，不再呼喚。' : '此處僅餘回聲。');
+              continue;
+            }
             this.handleCallGhostComm(step);
             return;
           }
@@ -192,9 +204,12 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
       return;
     }
 
+    const spiritId = step.spiritId;
+    this.activeSpiritId = spiritId;
+
     void this.router
       .push<{ spiritId: string }, GhostCommResult>('GhostCommScene', {
-        spiritId: step.spiritId
+        spiritId
       })
       .then(async (result) => {
         const resolvedKnots = Array.isArray(result?.resolvedKnots) ? result.resolvedKnots : [];
@@ -205,9 +220,18 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
         this.showToast(`靈體溝通完成，煞氣：${miasma}\n${resolvedSummary}`);
 
         if (result?.needPerson) {
+          const needPerson = result.needPerson;
+          if (!this.router) {
+            this.showToast('缺少路由，無法調解。');
+            return;
+          }
           this.skipNextMediationStep = true;
           try {
-            await this.runMediation(result.needPerson);
+            const mediationResult = await this.router.push<{ npcId: string }, MediationResult>(
+              'MediationScene',
+              { npcId: needPerson }
+            );
+            await this.processMediationResult(mediationResult, spiritId);
           } catch (error) {
             console.error(error);
             this.showToast('調解未完成。');
@@ -229,7 +253,7 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
       return;
     }
 
-    void this.runMediation(step.npcId)
+    void this.pushMediationScene(step.npcId, this.activeSpiritId)
       .catch(() => {
         this.showToast('調解未完成。');
       })
@@ -238,7 +262,7 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
       });
   }
 
-  private async runMediation(npcId: string) {
+  private async pushMediationScene(npcId: string, spiritId?: string) {
     if (!this.router) {
       throw new Error('缺少路由，無法調解');
     }
@@ -247,6 +271,10 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
       npcId
     });
 
+    await this.processMediationResult(result, spiritId);
+  }
+
+  private async processMediationResult(result: MediationResult, spiritId?: string) {
     const resolved = Array.isArray(result.resolved) ? result.resolved : [];
     const world = this.world;
     if (resolved.length && world) {
@@ -261,15 +289,69 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
     const summary = resolved.length ? `已解決：${resolved.join('、')}` : '仍待努力';
     this.showToast(`調解階段：${result.stage}\n${summary}`);
 
-    const hasOfferingOrApology = resolved.includes('e_offering') || resolved.includes('e_apology');
-    if (hasOfferingOrApology && world) {
-      this.showToast('供桌將擺上熱飯');
-      world.setFlag('已安息: spirit_wang_ayi', true);
-      this.flagsUpdated.add('已安息: spirit_wang_ayi');
-      if (!world.data.已安息靈.includes('spirit_wang_ayi')) {
-        world.data.已安息靈.push('spirit_wang_ayi');
+    await this.updateSpiritResolution(spiritId);
+  }
+
+  private async updateSpiritResolution(spiritId?: string) {
+    const targetSpiritId = spiritId ?? this.activeSpiritId;
+    if (!targetSpiritId) {
+      return;
+    }
+
+    const world = this.world;
+    if (!world) {
+      this.activeSpiritId = undefined;
+      return;
+    }
+
+    const spirit = await this.getSpiritById(targetSpiritId);
+    if (!spirit) {
+      this.activeSpiritId = undefined;
+      return;
+    }
+
+    const allResolved = spirit.執念?.length
+      ? spirit.執念.every((obsession) => {
+          const key = `obsession:${obsession.id}`;
+          return world.data.旗標[key] === '已解';
+        })
+      : false;
+
+    if (allResolved) {
+      GhostDirector.markResolved(targetSpiritId, world);
+      this.flagsUpdated.add(GhostDirector.getStateFlagKey(targetSpiritId));
+    }
+
+    this.activeSpiritId = undefined;
+  }
+
+  private async getSpiritById(spiritId: string): Promise<Spirit | undefined> {
+    if (!spiritId) {
+      return undefined;
+    }
+
+    if (this.spiritCache.has(spiritId)) {
+      return this.spiritCache.get(spiritId);
+    }
+
+    if (!this.repo) {
+      return undefined;
+    }
+
+    if (!this.spiritsLoaded) {
+      try {
+        const spirits = await this.repo.get<Spirit[]>('spirits');
+        spirits.forEach((spiritEntry) => {
+          this.spiritCache.set(spiritEntry.id, spiritEntry);
+        });
+        this.spiritsLoaded = true;
+      } catch (error) {
+        console.error('讀取靈體資料失敗', error);
+        this.spiritsLoaded = true;
       }
     }
+
+    return this.spiritCache.get(spiritId);
   }
 
   private isTextStep(step: StoryStep): step is StoryTextStep {
@@ -330,6 +412,7 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
       this.flagsUpdated.add(flagKey);
     }
 
+    this.bus?.emit('autosave');
     this.done({ flagsUpdated: Array.from(this.flagsUpdated) });
   }
 }
