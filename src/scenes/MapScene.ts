@@ -155,7 +155,15 @@ export default class MapScene extends ModuleScene {
   private updateLocationEntries() {
     this.locationEntries.forEach(({ anchor, text }) => {
       const isCurrent = anchor.地點 === this.currentLocation;
-      text.setText(`${isCurrent ? '★' : '・'}${anchor.地點}`);
+      const cleared = this.isAnchorCleared(anchor);
+      const label = cleared ? '（已送行）' : anchor.地點;
+      text.setText(`${isCurrent ? '★' : '・'}${label}`);
+      if (cleared) {
+        text.setStyle({ color: '#777' });
+        text.disableInteractive();
+        return;
+      }
+
       text.setStyle({ color: isCurrent ? '#ff0' : '#aaf' });
       if (isCurrent) {
         text.disableInteractive();
@@ -199,13 +207,26 @@ export default class MapScene extends ModuleScene {
     const storyStartY = 168;
 
     const currentAnchor = this.anchors.find((anchor) => anchor.地點 === this.currentLocation);
-    const candidateStories = currentAnchor
+    const anchorCleared = currentAnchor ? this.isAnchorCleared(currentAnchor) : false;
+    const candidateStories = currentAnchor && !anchorCleared
       ? this.stories.filter((story) => story.anchor === currentAnchor.id)
       : [];
 
     if (!currentAnchor) {
       const text = this.add
         .text(storyStartX, storyStartY, '尚未定位到錨點', {
+          fontSize: '18px',
+          color: '#fff'
+        })
+        .setOrigin(0, 0);
+      this.storyEntries.push({ text });
+      text.disableInteractive();
+      return;
+    }
+
+    if (anchorCleared) {
+      const text = this.add
+        .text(storyStartX, storyStartY, '此處已送行，靜候新緣', {
           fontSize: '18px',
           color: '#fff'
         })
@@ -294,5 +315,11 @@ export default class MapScene extends ModuleScene {
   private canEnterLocation(locationName: string): boolean {
     // 先用假條件：只有地點名稱包含「廳堂」時視為同行者願意進入。
     return locationName.includes('廳堂');
+  }
+
+  private isAnchorCleared(anchor: Anchor): boolean {
+    const clearedSpirits = this.world?.data?.已安息靈 ?? [];
+    const serviceSpirit = anchor.服務靈;
+    return !!serviceSpirit && clearedSpirits.includes(serviceSpirit);
   }
 }

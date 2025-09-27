@@ -24,7 +24,7 @@ type StoryNode = {
   steps: StoryStep[];
 };
 
-type GhostCommResult = { resolvedKnots: string[]; miasma: string };
+type GhostCommResult = { resolvedKnots?: string[]; miasma?: string; needPerson?: string };
 type MediationResult = { npcId: string; stage: string; resolved: string[] };
 
 export default class StoryScene extends ModuleScene<{ storyId: string }, { flagsUpdated: string[] }> {
@@ -38,6 +38,7 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
   private router?: Router;
   private textBox!: Phaser.GameObjects.Text;
   private promptText!: Phaser.GameObjects.Text;
+  private skipNextMediationStep = false;
 
   constructor() {
     super('StoryScene');
@@ -134,6 +135,10 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
           }
           break;
         case 'CALL_MEDIATION':
+          if (this.skipNextMediationStep) {
+            this.skipNextMediationStep = false;
+            continue;
+          }
           if (this.isCallMediationStep(step)) {
             this.handleCallMediation(step);
             return;
@@ -186,11 +191,24 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
       .push<{ spiritId: string }, GhostCommResult>('GhostCommScene', {
         spiritId: step.spiritId
       })
-      .then((result) => {
-        const resolvedSummary = result.resolvedKnots.length
-          ? `已解結：${result.resolvedKnots.join('、')}`
+      .then(async (result) => {
+        const resolvedKnots = Array.isArray(result?.resolvedKnots) ? result.resolvedKnots : [];
+        const miasma = result?.miasma ?? this.world?.data.煞氣 ?? '未知';
+        const resolvedSummary = resolvedKnots.length
+          ? `已解結：${resolvedKnots.join('、')}`
           : '尚未解結';
-        this.showToast(`靈體溝通完成，煞氣：${result.miasma}\n${resolvedSummary}`);
+        this.showToast(`靈體溝通完成，煞氣：${miasma}\n${resolvedSummary}`);
+
+        if (result?.needPerson) {
+          this.skipNextMediationStep = true;
+          try {
+            await this.runMediation(result.needPerson);
+          } catch (error) {
+            console.error(error);
+            this.showToast('調解未完成。');
+            this.skipNextMediationStep = false;
+          }
+        }
       })
       .catch(() => {
         this.showToast('靈體溝通未完成。');
@@ -206,30 +224,47 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
       return;
     }
 
-    void this.router
-      .push<{ npcId: string }, MediationResult>('MediationScene', {
-        npcId: step.npcId
-      })
-      .then((result) => {
-        const resolved = Array.isArray(result.resolved) ? result.resolved : [];
-        const world = this.world;
-        if (resolved.length && world) {
-          resolved.forEach((obsessionId) => {
-            if (!obsessionId) {
-              return;
-            }
-            world.data.旗標[`obsession:${obsessionId}`] = '已解';
-          });
-        }
-        const summary = resolved.length ? `已解決：${resolved.join('、')}` : '仍待努力';
-        this.showToast(`調解階段：${result.stage}\n${summary}`);
-      })
+    void this.runMediation(step.npcId)
       .catch(() => {
         this.showToast('調解未完成。');
       })
       .finally(() => {
         this.advance();
       });
+  }
+
+  private async runMediation(npcId: string) {
+    if (!this.router) {
+      throw new Error('缺少路由，無法調解');
+    }
+
+    const result = await this.router.push<{ npcId: string }, MediationResult>('MediationScene', {
+      npcId
+    });
+
+    const resolved = Array.isArray(result.resolved) ? result.resolved : [];
+    const world = this.world;
+    if (resolved.length && world) {
+      resolved.forEach((obsessionId) => {
+        if (!obsessionId) {
+          return;
+        }
+        world.data.旗標[`obsession:${obsessionId}`] = '已解';
+      });
+    }
+
+    const summary = resolved.length ? `已解決：${resolved.join('、')}` : '仍待努力';
+    this.showToast(`調解階段：${result.stage}\n${summary}`);
+
+    const hasOfferingOrApology = resolved.includes('e_offering') || resolved.includes('e_apology');
+    if (hasOfferingOrApology && world) {
+      this.showToast('供桌將擺上熱飯');
+      world.setFlag('已安息: spirit_wang_ayi', true);
+      this.flagsUpdated.add('已安息: spirit_wang_ayi');
+      if (!world.data.已安息靈.includes('spirit_wang_ayi')) {
+        world.data.已安息靈.push('spirit_wang_ayi');
+      }
+    }
   }
 
   private isTextStep(step: StoryStep): step is StoryTextStep {

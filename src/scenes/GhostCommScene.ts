@@ -6,8 +6,9 @@ import type { Spirit, WordCard, GhostOption } from '@core/Types';
 import type { WorldState } from '@core/WorldState';
 
 interface GhostCommResult {
-  resolvedKnots: string[];
-  miasma: string;
+  resolvedKnots?: string[];
+  miasma?: string;
+  needPerson?: string;
 }
 
 type ObsessionState = '鬆動' | '已解';
@@ -26,6 +27,8 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
 
   private obsessionState = new Map<string, ObsessionState>();
   private loadingOptions = false;
+  private consecutiveAccusations = 0;
+  private pendingNeedPerson?: string;
 
   constructor() {
     super('GhostCommScene');
@@ -280,6 +283,18 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
     }
 
     const effect = String(option.effect ?? '');
+    const optionType = String(option.type ?? '');
+
+    if (optionType === '指認') {
+      this.consecutiveAccusations += 1;
+      if (this.consecutiveAccusations >= 2) {
+        this.handleSilence();
+        return;
+      }
+    } else {
+      this.consecutiveAccusations = 0;
+    }
+
     if (effect === '平煞') {
       const current = this.world.data.煞氣;
       if (current === '沸') {
@@ -313,6 +328,17 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
     this.statusText?.setText(this.getStatusSummary());
   }
 
+  private handleSilence() {
+    this.pendingNeedPerson = 'npc_wang_shushu';
+    this.feedbackText?.setText('她沉默了');
+    if (this.input) {
+      this.input.enabled = false;
+    }
+    this.time.delayedCall(400, () => {
+      this.concludeCommunication({ needPerson: this.pendingNeedPerson });
+    });
+  }
+
   private getStatusSummary() {
     const miasma = this.world?.data.煞氣 ?? '未知';
     const obsEntries = Array.from(this.obsessionState.entries());
@@ -330,11 +356,21 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
   }
 
   private finish() {
+    this.concludeCommunication();
+  }
+
+  private concludeCommunication(overrides: Partial<GhostCommResult> = {}) {
     const resolved = Array.from(this.obsessionState.entries())
       .filter(([, state]) => state === '已解')
       .map(([id]) => id);
     const miasma = this.world?.data.煞氣 ?? '未知';
-    this.done({ resolvedKnots: resolved, miasma });
+    const result: GhostCommResult = {
+      resolvedKnots: resolved,
+      miasma,
+      needPerson: this.pendingNeedPerson,
+      ...overrides
+    };
+    this.done(result);
   }
 
   private showErrorAndExit(message: string) {
@@ -349,7 +385,7 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
       .setOrigin(0.5);
 
     this.time.delayedCall(1200, () => {
-      this.done({ resolvedKnots: [], miasma: this.world?.data.煞氣 ?? '未知' });
+      this.concludeCommunication();
     });
   }
 }
