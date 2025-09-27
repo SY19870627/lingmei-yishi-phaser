@@ -3,6 +3,7 @@ import { ModuleScene } from '@core/Router';
 import type { DataRepo } from '@core/DataRepo';
 import type { WorldState } from '@core/WorldState';
 import type { Router } from '@core/Router';
+import { GhostDirector } from '@core/GhostDirector';
 
 type StoryTextStep = { t: 'TEXT'; who?: string; text: string };
 type StoryGiveItemStep = { t: 'GIVE_ITEM'; itemId: string; message?: string };
@@ -135,6 +136,11 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
           break;
         case 'CALL_GHOST_COMM':
           if (this.isCallGhostCommStep(step)) {
+            const state = GhostDirector.getState(step.spiritId, this.world);
+            if (state === '安息' || state === '回聲') {
+              this.showToast(state === '安息' ? '靈體已安息，不再呼喚。' : '此處僅餘回聲。');
+              continue;
+            }
             this.handleCallGhostComm(step);
             return;
           }
@@ -264,11 +270,8 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
     const hasOfferingOrApology = resolved.includes('e_offering') || resolved.includes('e_apology');
     if (hasOfferingOrApology && world) {
       this.showToast('供桌將擺上熱飯');
-      world.setFlag('已安息: spirit_wang_ayi', true);
-      this.flagsUpdated.add('已安息: spirit_wang_ayi');
-      if (!world.data.已安息靈.includes('spirit_wang_ayi')) {
-        world.data.已安息靈.push('spirit_wang_ayi');
-      }
+      GhostDirector.markResolved('spirit_wang_ayi', world);
+      this.flagsUpdated.add(GhostDirector.getStateFlagKey('spirit_wang_ayi'));
     }
   }
 
