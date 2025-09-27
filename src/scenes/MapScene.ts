@@ -325,13 +325,7 @@ export default class MapScene extends ModuleScene {
     const companionText = companions.length
       ? companions.map((id) => this.getCompanionName(id)).join('、')
       : '目前沒有同行者';
-    const flagEntries = Object.entries(this.world?.data?.旗標 ?? {});
-    const flagText = flagEntries.length
-      ? flagEntries.map(([key, value]) => `${key}: ${String(value)}`).join('\n')
-      : '目前沒有旗標資料';
-    this.statusLabel.setText(
-      `當前位置：${this.currentLocation}\n同行者：${companionText}\n旗標：\n${flagText}`
-    );
+    this.statusLabel.setText(`當前位置：${this.currentLocation}\n同行者：${companionText}`);
   }
 
   private showMessage(message: string) {
