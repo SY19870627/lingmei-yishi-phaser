@@ -1,6 +1,8 @@
 import { ModuleScene } from '@core/Router';
 import type { DataRepo } from '@core/DataRepo';
 import { WorldState } from '@core/WorldState';
+import HintsManager, { type HintEntry } from '@core/HintsManager';
+import type { Anchor, Spirit } from '@core/Types';
 
 type StringsData = {
   ui?: {
@@ -19,26 +21,28 @@ export default class HintsScene extends ModuleScene<void, void> {
     const { width, height } = this.scale;
 
     let title = '提示';
+    let anchors: Anchor[] = [];
+    let spirits: Spirit[] = [];
 
     if (repo) {
       try {
-        const strings = await repo.get<StringsData>('strings');
+        const [strings, anchorData, spiritData] = await Promise.all([
+          repo.get<StringsData>('strings'),
+          repo.get<Anchor[]>('anchors'),
+          repo.get<Spirit[]>('spirits')
+        ]);
         title = strings?.ui?.hints ?? title;
+        anchors = Array.isArray(anchorData) ? anchorData : [];
+        spirits = Array.isArray(spiritData) ? spiritData : [];
       } catch (error) {
-        // ignore load errors and keep default title
+        // ignore load errors and keep default data fallbacks
       }
     }
 
     this.add.text(width / 2, 48, title, { fontSize: '28px', color: '#fff' }).setOrigin(0.5);
 
-    const flags = world?.data?.旗標 ?? {};
-    const entries = Object.entries(flags);
-
-    const directionsText = entries.length
-      ? entries
-          .map(([key, value]) => `• ${key}：${typeof value === 'string' ? value : JSON.stringify(value)}`)
-          .join('\n')
-      : '目前沒有可採取的方向。';
+    const hints = HintsManager.gather(world, spirits, anchors);
+    const directionsText = hints.length ? this.composeHintList(hints) : '目前沒有可採取的方向。';
 
     this.add
       .text(width / 2, height / 2, directionsText, {
@@ -57,5 +61,11 @@ export default class HintsScene extends ModuleScene<void, void> {
     closeButton.on('pointerup', () => {
       this.done(undefined as void);
     });
+  }
+
+  private composeHintList(hints: HintEntry[]): string {
+    return hints
+      .map((hint) => `• [${hint.kind}] ${hint.text}`)
+      .join('\n');
   }
 }
