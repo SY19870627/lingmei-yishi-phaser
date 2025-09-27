@@ -54,22 +54,6 @@ export default class MapScene extends ModuleScene {
       })
       .setOrigin(0.5, 1);
 
-    const saveButton = this.add
-      .text(width - 16, 16, '存檔', {
-        fontSize: '18px',
-        color: '#aaf'
-      })
-      .setOrigin(1, 0)
-      .setInteractive({ useHandCursor: true });
-
-    saveButton.on('pointerup', () => {
-      const saver = this.registry.get('saver');
-      if (saver && typeof saver.save === 'function') {
-        saver.save(0);
-      }
-      this.showMessage('已存檔');
-    });
-
     const closeButton = this.add
       .text(width - 16, height - 24, '返回', {
         fontSize: '18px',

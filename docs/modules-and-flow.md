@@ -2,16 +2,16 @@
 
 ## 流程 A：祖厝劇情主線
 1. **BootScene → TitleScene**：
-   - `BootScene` 建立共用實例（Router / DataRepo / WorldState / SaveManager / AiOrchestrator / EventBus），並放入 `registry`。
+   - `BootScene` 建立共用實例（Router / DataRepo / WorldState / AiOrchestrator / EventBus），並放入 `registry`。
    - 呼叫 `scene.start('TitleScene')`，玩家看到標題畫面。
 2. **TitleScene → ShellScene**：
-   - 玩家點擊「開始新遊戲」，`TitleScene.done({ action:'new' })`，同時以 `scene.start('ShellScene')` 切換主控台。
+   - 玩家點擊「開始遊戲」後以 `scene.start('ShellScene')` 切換主控台。
 3. **ShellScene → MapScene**：
    - `ShellScene` 讀取 `registry` 中的 `WorldState`，HUD 持續顯示位置／煞氣。
    - 玩家點擊「開啟地圖」，`Router.push('MapScene')` 啟動地圖模組並等待 Promise。
 4. **MapScene 初始化**：
    - 從 `DataRepo` 載入 `anchors.json`、`stories.json`，並從 `WorldState` 取得目前位置與旗標。
-   - 渲染可去地點與可啟動劇情，提供存檔按鈕。
+   - 渲染可去地點與可啟動劇情。
 5. **選擇故事 → StoryScene**：
    - 玩家選取 `story_wang_01`，`MapScene` 透過 `Router.push('StoryScene', { storyId })` 啟動故事流程。
    - 按鈕停用等待故事 Promise 完成。

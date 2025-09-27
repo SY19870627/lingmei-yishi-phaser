@@ -2,18 +2,16 @@
 
 ## 場景與共享資源關係
 - `BootScene`
-  - 建立 `Router`、`DataRepo`、`WorldState`、`SaveManager`、`AiOrchestrator`、`EventBus`，並放入 `registry`。
+  - 建立 `Router`、`DataRepo`、`WorldState`、`AiOrchestrator`、`EventBus`，並放入 `registry`。
   - 啟動 `TitleScene` 做為入口。
 - `TitleScene`
   - 新遊戲：直接切換到 `ShellScene`。
-  - 讀取進度：回傳路由結果給呼叫者，外層可依需要載入存檔。
 - `ShellScene`
   - 以 `Router` push 方式開啟 `MapScene`、`InventoryScene`、`WordCardsScene`、`HintsScene`。
   - 以畫面 HUD 顯示 `WorldState` 中的位置／煞氣／陰德。
 - `MapScene`
   - 從 `DataRepo` 載入 `anchors.json` 與 `stories.json`。
   - 讓玩家選擇錨點 → `StoryScene` → 完成後更新列表。
-  - 使用 `SaveManager` 存檔。
 - `StoryScene`
   - 讀取指定劇情節點並依 `steps` 執行。
   - 透過 `Router` push 呼叫 `GhostCommScene` 與 `MediationScene`，等待 Promise resolve 再繼續。
