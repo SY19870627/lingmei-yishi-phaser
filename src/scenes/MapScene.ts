@@ -116,6 +116,15 @@ export default class MapScene extends ModuleScene {
       const message = error instanceof Error ? error.message : String(error);
       this.showMessage(`載入資料失敗：${message}`);
     }
+
+    this.events.on(Phaser.Scenes.Events.RESUME, this.handleResume, this);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.events.off(Phaser.Scenes.Events.RESUME, this.handleResume, this);
+      if (this.messageTimer) {
+        this.messageTimer.remove(false);
+        this.messageTimer = undefined;
+      }
+    });
   }
 
   private buildLocationList(x: number, startY: number) {
@@ -275,15 +284,32 @@ export default class MapScene extends ModuleScene {
     text.setStyle({ color: '#ff0' });
     this.showMessage('劇情進行中……');
 
+    let completed = false;
+
     try {
       await this.router.push('StoryScene', { storyId: story.id });
+      completed = true;
       this.showMessage('劇情已完成');
     } catch (error) {
       this.showMessage('劇情未完成');
     } finally {
-      text.setStyle({ color: '#aaf' });
-      text.setInteractive({ useHandCursor: true });
+      if (!completed) {
+        text.setStyle({ color: '#aaf' });
+        text.setInteractive({ useHandCursor: true });
+      }
+      this.refreshMapState();
     }
+  }
+
+  private handleResume() {
+    this.refreshMapState();
+  }
+
+  private refreshMapState() {
+    this.currentLocation = this.world?.data?.位置 ?? this.currentLocation;
+    this.updateStatusLabel();
+    this.updateLocationEntries();
+    this.refreshStoryList();
   }
 
   private updateStatusLabel() {
