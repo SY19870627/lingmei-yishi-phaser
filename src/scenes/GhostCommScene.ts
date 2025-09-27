@@ -6,6 +6,7 @@ import type { Spirit, WordCard, GhostOption } from '@core/Types';
 import type { WorldState } from '@core/WorldState';
 import KnotTag from '@ui/KnotTag';
 import type { KnotState } from '@ui/KnotTag';
+import { GhostDirector } from '@core/GhostDirector';
 
 interface GhostCommResult {
   resolvedKnots?: string[];
@@ -34,6 +35,7 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
   private lastAccusationKey?: string;
   private concluded = false;
   private bus?: Phaser.Events.EventEmitter;
+  private cachedStepKey?: string;
 
   constructor() {
     super('GhostCommScene');
@@ -231,10 +233,13 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
     this.setOptionsText(['載入選項中……']);
 
     try {
+      const stepIndex = this.getConversationStep();
+      const seed = this.buildSeedString(stepIndex);
       const { options } = await this.aio.genGhostOptions({
         spirit: this.spirit,
         word: card,
-        world: this.world.data
+        world: this.world.data,
+        seed
       });
 
       if (!options.length) {
@@ -333,6 +338,8 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
       return;
     }
 
+    this.advanceConversationStep();
+
     const effect = String(option.effect ?? '');
     const optionType = String(option.type ?? '');
 
@@ -402,6 +409,73 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
     }
     this.feedbackText?.setText(summaryParts.join('\n'));
     this.statusText?.setText(this.getStatusSummary());
+  }
+
+  private getConversationStep(): number {
+    const key = this.getStepFlagKey();
+    if (!key || !this.world) {
+      return 0;
+    }
+    const value = this.world.data.旗標?.[key];
+    if (typeof value === 'number' && Number.isFinite(value) && value >= 0) {
+      return Math.floor(value);
+    }
+    return 0;
+  }
+
+  private advanceConversationStep() {
+    const key = this.getStepFlagKey();
+    if (!key || !this.world) {
+      return;
+    }
+    const current = this.getConversationStep();
+    this.world.setFlag(key, current + 1);
+  }
+
+  private getStepFlagKey(): string | undefined {
+    if (this.cachedStepKey) {
+      return this.cachedStepKey;
+    }
+    const id = this.spirit?.id;
+    if (!id) {
+      return undefined;
+    }
+    this.cachedStepKey = `ghost.step:${id}`;
+    return this.cachedStepKey;
+  }
+
+  private buildSeedString(stepIndex: number): string {
+    const spiritId = this.spirit?.id ?? '';
+    const snapshot = this.buildKeyFlagSnapshot();
+    const sortedKeys = Object.keys(snapshot).sort();
+    const ordered: Record<string, unknown> = {};
+    sortedKeys.forEach((key) => {
+      ordered[key] = snapshot[key];
+    });
+    const flagsJson = JSON.stringify(ordered);
+    return `${spiritId}|${stepIndex}|${flagsJson}`;
+  }
+
+  private buildKeyFlagSnapshot(): Record<string, unknown> {
+    const result: Record<string, unknown> = {};
+    if (!this.world || !this.spirit) {
+      return result;
+    }
+
+    const flags = this.world.data.旗標 ?? {};
+    const keys = [
+      GhostDirector.getStateFlagKey(this.spirit.id),
+      ...((this.spirit.執念 ?? []).map((obs) => `obsession:${obs.id}`)),
+      this.getStepFlagKey()
+    ].filter((key): key is string => Boolean(key));
+
+    keys.forEach((key) => {
+      if (key in flags) {
+        result[key] = flags[key];
+      }
+    });
+
+    return result;
   }
 
   private triggerRefusal() {

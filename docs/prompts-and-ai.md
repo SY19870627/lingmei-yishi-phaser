@@ -82,4 +82,13 @@
 }
 ```
 
-`stage` 為 NPC 最終所處的轉折階段，`resolved` 為成功解決的執念 id；`StoryScene` 會據此更新 `WorldState` 旗標與靈體狀態。 
+`stage` 為 NPC 最終所處的轉折階段，`resolved` 為成功解決的執念 id；`StoryScene` 會據此更新 `WorldState` 旗標與靈體狀態。
+
+## 可重現性
+本機 `AiOrchestrator` 會依據 `contextSeed` 產生亂數來源，讓同一輪溝通在重讀存檔後仍能得到一致的選項排序與措辭。`contextSeed` 由下列資訊串接而成：
+
+- `spiritId`
+- 當前溝通步驟（`ghost.step:<spiritId>` 旗標記錄的整數）
+- 與該靈體相關的旗標快照（`spirit.<id>.state` 以及 `obsession:<id>` 等鍵，以穩定順序 JSON 序列化）
+
+任何影響關鍵旗標的變化都會導致新的種子，使後續輪次的選項變化得以體現；若世界狀態未變，則相同種子將重現同樣的列表與語氣。
