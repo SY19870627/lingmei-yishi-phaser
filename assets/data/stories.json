@@ -5,6 +5,7 @@
       {"t":"TEXT","who":"旁白","text":"廳堂微潮，燈影搖。"},
       {"t":"TEXT","who":"亡魂","text":"她不吃塑膠做的飯。"},
       {"t":"CALL_GHOST_COMM","spiritId":"spirit_wang_ayi"},
+      {"t":"CALL_MEDIATION","npcId":"npc_wang_shushu"},
       {"t":"END"}
     ]
   }
