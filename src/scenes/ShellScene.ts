@@ -60,5 +60,29 @@ export default class ShellScene extends ModuleScene {
       const picked = await router.push<string | null>('InventoryScene');
       pickedLabel.setText(`選擇的物品：${picked ?? '無'}`);
     });
+
+    const wordCardsButton = this.add
+      .text(width / 2, height / 2 + 120, '字卡', {
+        fontSize: '24px',
+        color: '#aaf'
+      })
+      .setOrigin(0.5)
+      .setInteractive({ useHandCursor: true });
+
+    wordCardsButton.on('pointerup', () => {
+      router.push('WordCardsScene');
+    });
+
+    const hintsButton = this.add
+      .text(width / 2, height / 2 + 180, '提示', {
+        fontSize: '24px',
+        color: '#aaf'
+      })
+      .setOrigin(0.5)
+      .setInteractive({ useHandCursor: true });
+
+    hintsButton.on('pointerup', () => {
+      router.push('HintsScene');
+    });
   }
 }
