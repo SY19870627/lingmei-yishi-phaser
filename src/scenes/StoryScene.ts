@@ -6,12 +6,26 @@ import type { Router } from '@core/Router';
 import { GhostDirector } from '@core/GhostDirector';
 import type { Spirit } from '@core/Types';
 
-type StoryTextStep = { t: 'TEXT'; who?: string; text: string };
-type StoryGiveItemStep = { t: 'GIVE_ITEM'; itemId: string; message?: string };
-type StoryUpdateFlagStep = { t: 'UPDATE_FLAG'; flag: string; value: unknown };
-type StoryEndStep = { t: 'END' };
-type StoryCallGhostCommStep = { t: 'CALL_GHOST_COMM'; spiritId: string };
-type StoryCallMediationStep = { t: 'CALL_MEDIATION'; npcId: string };
+type StoryBaseStep = { lineId?: string };
+type StoryTextStep = StoryBaseStep & { t: 'TEXT'; who?: string; text: string };
+type StoryGiveItemStep = StoryBaseStep & { t: 'GIVE_ITEM'; itemId: string; message?: string };
+type StoryUpdateFlagStep = StoryBaseStep & { t: 'UPDATE_FLAG'; flag: string; value: unknown };
+type StoryEndStep = StoryBaseStep & { t: 'END' };
+type StoryCallGhostCommStep = StoryBaseStep & { t: 'CALL_GHOST_COMM'; spiritId: string };
+type StoryCallMediationStep = StoryBaseStep & { t: 'CALL_MEDIATION'; npcId: string };
+type StoryChoiceOptionBase = { text: string; nextLineId?: string };
+type StoryChoiceGotoOption = StoryChoiceOptionBase & { action: 'GOTO_LINE'; targetLineId: string };
+type StoryChoiceStartStoryOption = StoryChoiceOptionBase & { action: 'START_STORY'; storyId: string };
+type StoryChoiceCallGhostOption = StoryChoiceOptionBase & { action: 'CALL_GHOST_COMM'; spiritId: string };
+type StoryChoiceCallMediationOption = StoryChoiceOptionBase & { action: 'CALL_MEDIATION'; npcId: string };
+type StoryChoiceEndOption = StoryChoiceOptionBase & { action: 'END' };
+type StoryChoiceOption =
+  | StoryChoiceGotoOption
+  | StoryChoiceStartStoryOption
+  | StoryChoiceCallGhostOption
+  | StoryChoiceCallMediationOption
+  | StoryChoiceEndOption;
+type StoryChoiceStep = StoryBaseStep & { t: 'CHOICE'; options: StoryChoiceOption[] };
 type StoryStep =
   | StoryTextStep
   | StoryGiveItemStep
@@ -19,6 +33,7 @@ type StoryStep =
   | StoryEndStep
   | StoryCallGhostCommStep
   | StoryCallMediationStep
+  | StoryChoiceStep
   | { t: string; [key: string]: unknown };
 
 type StoryNode = {
@@ -33,6 +48,7 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
   private steps: StoryStep[] = [];
   private stepIndex = 0;
   private awaitingInput = false;
+  private awaitingChoice = false;
   private finished = false;
   private flagsUpdated = new Set<string>();
   private world?: WorldState;
@@ -40,6 +56,7 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
   private router?: Router;
   private textBox!: Phaser.GameObjects.Text;
   private promptText!: Phaser.GameObjects.Text;
+  private choiceTexts: Phaser.GameObjects.Text[] = [];
   private skipNextMediationStep = false;
   private storyId?: string;
   private storyLoaded = false;
@@ -47,6 +64,8 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
   private spiritsLoaded = false;
   private spiritCache = new Map<string, Spirit>();
   private bus?: Phaser.Events.EventEmitter;
+  private lineIndexById = new Map<string, number>();
+  private pendingLineJump?: string;
 
   constructor() {
     super('StoryScene');
@@ -107,6 +126,7 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
       }
 
       this.steps = story.steps ?? [];
+      this.indexStoryLines();
       this.storyLoaded = true;
       if (!this.steps.length) {
         this.finishStory();
@@ -121,6 +141,13 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
   }
 
   private advance() {
+    if (this.pendingLineJump) {
+      const targetLineId = this.pendingLineJump;
+      this.pendingLineJump = undefined;
+      this.jumpToLine(targetLineId);
+    }
+
+    this.clearChoices();
     while (this.stepIndex < this.steps.length) {
       const step = this.steps[this.stepIndex++];
       switch (step.t) {
@@ -161,6 +188,12 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
             return;
           }
           break;
+        case 'CHOICE':
+          if (this.isChoiceStep(step)) {
+            this.handleChoice(step);
+            return;
+          }
+          break;
         case 'END':
           this.finishStory();
           return;
@@ -174,9 +207,10 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
   }
 
   private displayText(step: StoryTextStep) {
+    this.clearChoices();
     const lines = step.who ? `${step.who}：${step.text}` : step.text;
     this.textBox.setText(lines);
-    this.promptText.setVisible(true);
+    this.promptText.setText('點擊繼續').setVisible(true);
     this.awaitingInput = true;
   }
 
@@ -199,6 +233,7 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
   }
 
   private handleCallGhostComm(step: StoryCallGhostCommStep) {
+    this.promptText.setVisible(false);
     if (!this.router || !step.spiritId) {
       this.showToast('無法呼叫靈體溝通。');
       return;
@@ -248,6 +283,7 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
   }
 
   private handleCallMediation(step: StoryCallMediationStep) {
+    this.promptText.setVisible(false);
     if (!this.router || !step.npcId) {
       this.showToast('無法進行調解。');
       return;
@@ -374,6 +410,144 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
     return step.t === 'CALL_MEDIATION' && typeof (step as Partial<StoryCallMediationStep>).npcId === 'string';
   }
 
+  private isChoiceStep(step: StoryStep): step is StoryChoiceStep {
+    if (step.t !== 'CHOICE') {
+      return false;
+    }
+    const options = (step as Partial<StoryChoiceStep>).options;
+    return Array.isArray(options) && options.length > 0;
+  }
+
+  private handleChoice(step: StoryChoiceStep) {
+    this.awaitingInput = false;
+    this.awaitingChoice = true;
+    this.promptText.setText('選擇一個行動').setVisible(true);
+    const { width, height } = this.scale;
+    const startY = height / 2 + 20;
+    const optionSpacing = 34;
+
+    step.options.forEach((option, index) => {
+      const label = `${index + 1}. ${option.text}`;
+      const optionText = this.add
+        .text(width / 2, startY + index * optionSpacing, label, {
+          fontSize: '20px',
+          color: '#ddd',
+          align: 'center',
+          wordWrap: { width: width - 160 }
+        })
+        .setOrigin(0.5)
+        .setInteractive({ useHandCursor: true });
+
+      optionText.on('pointerover', () => {
+        optionText.setStyle({ color: '#fff' });
+      });
+      optionText.on('pointerout', () => {
+        optionText.setStyle({ color: '#ddd' });
+      });
+      optionText.on('pointerup', () => {
+        this.selectChoiceOption(option);
+      });
+
+      this.choiceTexts.push(optionText);
+    });
+  }
+
+  private selectChoiceOption(option: StoryChoiceOption) {
+    if (!this.awaitingChoice) {
+      return;
+    }
+    this.awaitingChoice = false;
+    this.clearChoices();
+
+    switch (option.action) {
+      case 'GOTO_LINE': {
+        const jumped = this.jumpToLine(option.targetLineId);
+        this.advanceAfterChoice(jumped);
+        break;
+      }
+      case 'START_STORY':
+        if (!this.router) {
+          this.showToast('缺少路由，無法開啟新劇情。');
+          this.advanceAfterChoice(false);
+          return;
+        }
+        this.promptText.setVisible(false);
+        void this.router.push('StoryScene', { storyId: option.storyId }).catch((error) => {
+          console.error(error);
+          this.showToast('無法開啟指定劇情。');
+        });
+        this.finishStory();
+        break;
+      case 'CALL_GHOST_COMM':
+        this.schedulePendingJump(option.nextLineId);
+        this.handleCallGhostComm({ t: 'CALL_GHOST_COMM', spiritId: option.spiritId, lineId: option.nextLineId });
+        break;
+      case 'CALL_MEDIATION':
+        this.schedulePendingJump(option.nextLineId);
+        this.handleCallMediation({ t: 'CALL_MEDIATION', npcId: option.npcId, lineId: option.nextLineId });
+        break;
+      case 'END':
+        this.finishStory();
+        break;
+      default:
+        this.advanceAfterChoice(false);
+        break;
+    }
+  }
+
+  private advanceAfterChoice(success: boolean) {
+    if (!success) {
+      this.promptText.setVisible(false);
+    }
+    this.advance();
+  }
+
+  private schedulePendingJump(lineId?: string) {
+    this.pendingLineJump = lineId ?? undefined;
+  }
+
+  private clearChoices() {
+    if (this.choiceTexts.length) {
+      this.choiceTexts.forEach((text) => text.destroy());
+      this.choiceTexts = [];
+    }
+    if (this.awaitingChoice) {
+      this.awaitingChoice = false;
+      this.promptText.setVisible(false);
+    }
+  }
+
+  private jumpToLine(lineId: string | undefined): boolean {
+    if (!lineId) {
+      return false;
+    }
+    const index = this.lineIndexById.get(lineId);
+    if (index === undefined) {
+      this.showToast(`找不到段落：${lineId}`);
+      return false;
+    }
+    this.stepIndex = index;
+    return true;
+  }
+
+  private indexStoryLines() {
+    this.lineIndexById.clear();
+    this.steps.forEach((step, index) => {
+      const lineId = this.getLineId(step);
+      if (!lineId) {
+        return;
+      }
+      if (this.lineIndexById.has(lineId)) {
+        console.warn(`重複的劇情段落編號：${lineId}`);
+      }
+      this.lineIndexById.set(lineId, index);
+    });
+  }
+
+  private getLineId(step: StoryStep): string | undefined {
+    return (step as StoryBaseStep)?.lineId;
+  }
+
   private showToast(message: string) {
     const { width, height } = this.scale;
     const toast = this.add
@@ -406,6 +580,7 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
       return;
     }
     this.finished = true;
+    this.clearChoices();
     if (this.storyLoaded && this.storyId && this.world) {
       const flagKey = `story:${this.storyId}`;
       this.world.setFlag(flagKey, true);

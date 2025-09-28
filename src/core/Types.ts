@@ -13,12 +13,19 @@ export interface NPC { id:string; 稱呼:string; 性格:string[]; 避雷:string[
 export interface StoryService { spiritId:string; triggerLine:number; }
 export interface StoryNode {
   id:string; anchor:string; service?:StoryService;
-  steps:( {t:"TEXT"; who:"旁白"|"亡魂"|"NPC"|"玩家"; text:string; updates?:string[]}
-        | {t:"CALL_GHOST_COMM"; spiritId:string}
-        | {t:"CALL_MEDIATION"; npcId:string}
-        | {t:"GIVE_ITEM"; itemId:string}
-        | {t:"UPDATE_FLAG"; flag:string; value:any}
-        | {t:"END"} )[];
+  steps:( {t:"TEXT"; who:"旁白"|"亡魂"|"NPC"|"玩家"; text:string; lineId?:string; updates?:string[]}
+        | {t:"CALL_GHOST_COMM"; spiritId:string; lineId?:string}
+        | {t:"CALL_MEDIATION"; npcId:string; lineId?:string}
+        | {t:"GIVE_ITEM"; itemId:string; lineId?:string}
+        | {t:"UPDATE_FLAG"; flag:string; value:any; lineId?:string}
+        | {t:"END"; lineId?:string}
+        | {t:"CHOICE"; lineId?:string; options:(
+              {action:"GOTO_LINE"; text:string; targetLineId:string; nextLineId?:string}
+            | {action:"START_STORY"; text:string; storyId:string; nextLineId?:string}
+            | {action:"CALL_GHOST_COMM"; text:string; spiritId:string; nextLineId?:string}
+            | {action:"CALL_MEDIATION"; text:string; npcId:string; nextLineId?:string}
+            | {action:"END"; text:string; nextLineId?:string}
+          )[] } )[];
 }
 export interface GhostOption {
   text:string; type:"安撫"|"提問"|"交換"|"儀式"|"指認";

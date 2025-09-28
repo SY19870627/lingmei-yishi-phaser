@@ -76,7 +76,7 @@
 | --- | --- | --- |
 | `id` | `string` | 劇情節點代號。 |
 | `anchor` | `string` | 所屬錨點 id。 |
-| `steps` | `StoryStep[]` | 劇情步驟陣列。`StoryStep` 可為 `TEXT`、`GIVE_ITEM`、`UPDATE_FLAG`、`CALL_GHOST_COMM`、`CALL_MEDIATION`、`END` 等指令。 |
+| `steps` | `StoryStep[]` | 劇情步驟陣列。每一句 `TEXT` 對白都必須填寫唯一的 `lineId` 以供跳轉與服務判斷。`StoryStep` 可為 `TEXT`、`GIVE_ITEM`、`UPDATE_FLAG`、`CALL_GHOST_COMM`、`CALL_MEDIATION`、`CHOICE`、`END` 等指令。 |
 
 ## GhostOption
 | 欄位 | 型別 | 說明 |
@@ -109,4 +109,4 @@
 - `schemas/spirit.schema.json`：`Spirit` 的 `id`、`名稱`、`年代`、`場域_anchor`、`初始狀態`、`煞氣`、`背景`、`執念`、`特例`、`限制`。
 - `schemas/anchor.schema.json`：`Anchor` 的 `id`、`地點`、`條件`、`完成後`。
 - `schemas/map.schema.json`：`MapDef` 的 `id`、`image`。
-- `schemas/story.schema.json`：`StoryNode` 的 `id`、`anchor`、`service` 與各類 `steps` 類型（`TEXT`、`CALL_GHOST_COMM`、`CALL_MEDIATION`、`GIVE_ITEM`、`UPDATE_FLAG`、`END`）。
+- `schemas/story.schema.json`：`StoryNode` 的 `id`、`anchor`、`service` 與各類 `steps` 類型（`TEXT`、`CALL_GHOST_COMM`、`CALL_MEDIATION`、`GIVE_ITEM`、`UPDATE_FLAG`、`CHOICE`、`END`）。

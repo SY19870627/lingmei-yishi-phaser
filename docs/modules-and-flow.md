@@ -18,9 +18,10 @@
 6. **StoryScene 執行步驟**：
    - 依 `steps` 逐一處理：
      1. `TEXT`：顯示旁白與亡魂台詞並等待玩家點擊。
-     2. `CALL_GHOST_COMM`：以 `Router.push('GhostCommScene', { spiritId })` 呼叫溝通模組，暫停後續步驟直至 Promise resolve。
-     3. `CALL_MEDIATION`：若 `GhostCommScene` 回傳 `needPerson` 或故事腳本含 `CALL_MEDIATION`，以 `Router.push('MediationScene', { npcId })` 啟動調解。
-     4. `END`：全部步驟完成後呼叫 `done({ flagsUpdated })`，回傳更新的旗標陣列。
+     2. `CHOICE`：顯示多個互動選項，可跳轉段落、啟動新劇情或直接呼叫亡魂交談／調解。
+     3. `CALL_GHOST_COMM`：以 `Router.push('GhostCommScene', { spiritId })` 呼叫溝通模組，暫停後續步驟直至 Promise resolve。
+     4. `CALL_MEDIATION`：若 `GhostCommScene` 回傳 `needPerson` 或故事腳本含 `CALL_MEDIATION`，以 `Router.push('MediationScene', { npcId })` 啟動調解。
+     5. `END`：全部步驟完成後呼叫 `done({ flagsUpdated })`，回傳更新的旗標陣列。
 7. **GhostCommScene 運行**：
    - 讀取 `spirits.json`、`wordcards.json`，建立介面。
    - 玩家挑選字卡時，呼叫 `AiOrchestrator.genGhostOptions({ spirit, word, world })` 取得選項。

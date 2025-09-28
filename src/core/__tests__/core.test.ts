@@ -120,7 +120,7 @@ describe('HintsManager.gather', () => {
 
     expect(hints).toContainEqual({
       id: 'obsession:obs-2',
-      text: '去靈堂找找「準備供品」，也許能幫林魂。',
+      text: '去碼頭找找「準備供品」，也許能幫林魂。',
       kind: '物品',
     });
   });
