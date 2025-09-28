@@ -16,11 +16,12 @@
             {
               "type": "object",
               "additionalProperties": false,
-              "required": ["t", "who", "text"],
+              "required": ["t", "who", "text", "lineId"],
               "properties": {
                 "t": { "const": "TEXT" },
                 "who": { "type": "string" },
                 "text": { "type": "string" },
+                "lineId": { "type": "string" },
                 "updates": {
                   "type": "array",
                   "items": { "type": "string" }
@@ -33,7 +34,8 @@
               "required": ["t", "spiritId"],
               "properties": {
                 "t": { "const": "CALL_GHOST_COMM" },
-                "spiritId": { "type": "string" }
+                "spiritId": { "type": "string" },
+                "lineId": { "type": "string" }
               }
             },
             {
@@ -42,7 +44,8 @@
               "required": ["t", "npcId"],
               "properties": {
                 "t": { "const": "CALL_MEDIATION" },
-                "npcId": { "type": "string" }
+                "npcId": { "type": "string" },
+                "lineId": { "type": "string" }
               }
             },
             {
@@ -52,7 +55,8 @@
               "properties": {
                 "t": { "const": "GIVE_ITEM" },
                 "itemId": { "type": "string" },
-                "message": { "type": "string" }
+                "message": { "type": "string" },
+                "lineId": { "type": "string" }
               }
             },
             {
@@ -62,7 +66,8 @@
               "properties": {
                 "t": { "const": "UPDATE_FLAG" },
                 "flag": { "type": "string" },
-                "value": {}
+                "value": {},
+                "lineId": { "type": "string" }
               }
             },
             {
@@ -70,7 +75,79 @@
               "additionalProperties": false,
               "required": ["t"],
               "properties": {
-                "t": { "const": "END" }
+                "t": { "const": "END" },
+                "lineId": { "type": "string" }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["t", "options", "lineId"],
+              "properties": {
+                "t": { "const": "CHOICE" },
+                "lineId": { "type": "string" },
+                "options": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "oneOf": [
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": ["action", "text", "targetLineId"],
+                        "properties": {
+                          "action": { "const": "GOTO_LINE" },
+                          "text": { "type": "string" },
+                          "targetLineId": { "type": "string" },
+                          "nextLineId": { "type": "string" }
+                        }
+                      },
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": ["action", "text", "storyId"],
+                        "properties": {
+                          "action": { "const": "START_STORY" },
+                          "text": { "type": "string" },
+                          "storyId": { "type": "string" },
+                          "nextLineId": { "type": "string" }
+                        }
+                      },
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": ["action", "text", "spiritId"],
+                        "properties": {
+                          "action": { "const": "CALL_GHOST_COMM" },
+                          "text": { "type": "string" },
+                          "spiritId": { "type": "string" },
+                          "nextLineId": { "type": "string" }
+                        }
+                      },
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": ["action", "text", "npcId"],
+                        "properties": {
+                          "action": { "const": "CALL_MEDIATION" },
+                          "text": { "type": "string" },
+                          "npcId": { "type": "string" },
+                          "nextLineId": { "type": "string" }
+                        }
+                      },
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": ["action", "text"],
+                        "properties": {
+                          "action": { "const": "END" },
+                          "text": { "type": "string" },
+                          "nextLineId": { "type": "string" }
+                        }
+                      }
+                    ]
+                  }
+                }
               }
             }
           ]

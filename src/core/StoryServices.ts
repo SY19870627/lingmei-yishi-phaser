@@ -10,17 +10,6 @@ export interface StoryServiceIndex {
   bySpirit: Map<string, StoryServiceEntry>;
 }
 
-function isValidTriggerLine(story: StoryNode, triggerLine: number): boolean {
-  if (!Number.isInteger(triggerLine) || triggerLine <= 0) {
-    return false;
-  }
-  if (triggerLine > story.steps.length) {
-    return false;
-  }
-  const targetStep = story.steps[triggerLine - 1];
-  return typeof targetStep === 'object' && targetStep?.t === 'CALL_GHOST_COMM';
-}
-
 export function buildStoryServiceIndex(stories: StoryNode[]): StoryServiceIndex {
   const byAnchor = new Map<string, StoryServiceEntry>();
   const bySpirit = new Map<string, StoryServiceEntry>();
@@ -31,12 +20,32 @@ export function buildStoryServiceIndex(stories: StoryNode[]): StoryServiceIndex 
       return;
     }
 
-    if (!isValidTriggerLine(story, service.triggerLine)) {
+    const triggerLine = service.triggerLine;
+    if (!Number.isInteger(triggerLine) || triggerLine <= 0 || triggerLine > story.steps.length) {
       return;
     }
 
-    const step = story.steps[service.triggerLine - 1];
-    if (step?.t !== 'CALL_GHOST_COMM' || step.spiritId !== service.spiritId) {
+    const step = story.steps[triggerLine - 1];
+    if (!step || typeof step !== 'object') {
+      return;
+    }
+
+    if (step.t === 'CALL_GHOST_COMM') {
+      if (step.spiritId !== service.spiritId) {
+        return;
+      }
+    } else if (step.t === 'CHOICE') {
+      const choiceStep = step as Extract<StoryNode['steps'][number], { t: 'CHOICE' }>;
+      if (!Array.isArray(choiceStep.options)) {
+        return;
+      }
+      const supportsGhost = choiceStep.options.some((option) => {
+        return option.action === 'CALL_GHOST_COMM' && option.spiritId === service.spiritId;
+      });
+      if (!supportsGhost) {
+        return;
+      }
+    } else {
       return;
     }
 

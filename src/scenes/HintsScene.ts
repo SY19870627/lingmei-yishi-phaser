@@ -30,7 +30,8 @@ export default class HintsScene extends ModuleScene<void, void> {
         const [strings, anchorData, spiritData, storyData] = await Promise.all([
           repo.get<StringsData>('strings'),
           repo.get<Anchor[]>('anchors'),
-          repo.get<Spirit[]>('spirits')
+          repo.get<Spirit[]>('spirits'),
+          repo.get<StoryNode[]>('stories')
         ]);
         title = strings?.ui?.hints ?? title;
         anchors = Array.isArray(anchorData) ? anchorData : [];

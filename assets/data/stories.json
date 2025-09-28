@@ -3,29 +3,29 @@
     "id":"story_beads_intro",
     "anchor":"anchor_old_dock_depot",
     "steps":[
-      {"t":"TEXT","who":"旁白","text":"碼頭邊風鹹，王嬸看見你，摸出一串舊佛珠。"},
-      {"t":"TEXT","who":"NPC","text":"「孩子，這串珠子跟著我唸了好多年，借你用，用在該用的地方。」"},
-      {"t":"GIVE_ITEM","itemId":"it_wang_beads"},
-      {"t":"TEXT","who":"NPC","text":"「祖厝那盞燈也該點了。」"},
-      {"t":"UPDATE_FLAG","flag":"zu_cuo_lamp_lit","value":true},
-      {"t":"END"}
+      {"t":"TEXT","who":"旁白","text":"碼頭邊風鹹，王嬸看見你，摸出一串舊佛珠。","lineId":"beads_intro_01"},
+      {"t":"TEXT","who":"NPC","text":"「孩子，這串珠子跟著我唸了好多年，借你用，用在該用的地方。」","lineId":"beads_intro_02"},
+      {"t":"GIVE_ITEM","itemId":"it_wang_beads","lineId":"beads_intro_give"},
+      {"t":"TEXT","who":"NPC","text":"「祖厝那盞燈也該點了。」","lineId":"beads_intro_03"},
+      {"t":"UPDATE_FLAG","flag":"zu_cuo_lamp_lit","value":true,"lineId":"beads_intro_flag"},
+      {"t":"END","lineId":"beads_intro_end"}
     ]
   },
   {
     "id":"story_wang_01",
     "anchor":"anchor_zu_cuo_hall",
     "steps":[
-      {"t":"TEXT","who":"旁白","text":"廳堂微潮，蓮花燈穩穩亮著。"},
-      {"t":"TEXT","who":"亡魂","text":"「她不吃塑膠做的飯。」"},
-      {"t":"CALL_GHOST_COMM","spiritId":"spirit_wang_ayi"},
-      {"t":"TEXT","who":"旁白","text":"你記下她愛的菜式，王嬸的佛珠在掌心發熱。"},
-      {"t":"CALL_MEDIATION","npcId":"npc_wang_shushu"},
-      {"t":"TEXT","who":"旁白","text":"若王叔叔點頭承諾，你幫忙擺上一碗熱飯。"},
-      {"t":"GIVE_ITEM","itemId":"it_hot_rice"},
-      {"t":"UPDATE_FLAG","flag":"擺上熱飯","value":true},
-      {"t":"TEXT","who":"亡魂","text":"「香味到了，她就知道。」"},
-      {"t":"UPDATE_FLAG","flag":"已安息:spirit_wang_ayi","value":true},
-      {"t":"END"}
+      {"t":"TEXT","who":"旁白","text":"廳堂微潮，蓮花燈穩穩亮著。","lineId":"wang_01_01"},
+      {"t":"TEXT","who":"亡魂","text":"「她不吃塑膠做的飯。」","lineId":"wang_01_02"},
+      {"t":"CALL_GHOST_COMM","spiritId":"spirit_wang_ayi","lineId":"wang_01_call"},
+      {"t":"TEXT","who":"旁白","text":"你記下她愛的菜式，王嬸的佛珠在掌心發熱。","lineId":"wang_01_03"},
+      {"t":"CALL_MEDIATION","npcId":"npc_wang_shushu","lineId":"wang_01_mediation"},
+      {"t":"TEXT","who":"旁白","text":"若王叔叔點頭承諾，你幫忙擺上一碗熱飯。","lineId":"wang_01_04"},
+      {"t":"GIVE_ITEM","itemId":"it_hot_rice","lineId":"wang_01_item"},
+      {"t":"UPDATE_FLAG","flag":"擺上熱飯","value":true,"lineId":"wang_01_flag_meal"},
+      {"t":"TEXT","who":"亡魂","text":"「香味到了，她就知道。」","lineId":"wang_01_05"},
+      {"t":"UPDATE_FLAG","flag":"已安息:spirit_wang_ayi","value":true,"lineId":"wang_01_flag_rest"},
+      {"t":"END","lineId":"wang_01_end"}
     ],
     "service": {
       "spiritId": "spirit_wang_ayi",
@@ -36,14 +36,24 @@
     "id":"story_dock_01",
     "anchor":"anchor_old_dock_depot",
     "steps":[
-      {"t":"TEXT","who":"旁白","text":"倉房內潮紙翻飛，一名年輕人影站在窗邊。"},
-      {"t":"CALL_GHOST_COMM","spiritId":"spirit_dock_soldier"},
-      {"t":"TEXT","who":"旁白","text":"你在夾層找出一頁名冊。"},
-      {"t":"GIVE_ITEM","itemId":"it_old_roster_page"},
-      {"t":"CALL_MEDIATION","npcId":"npc_dock_clerk"},
-      {"t":"TEXT","who":"亡魂","text":"「名字回來了，路也就回來了。」"},
-      {"t":"UPDATE_FLAG","flag":"已安息:spirit_dock_soldier","value":true},
-      {"t":"END"}
+      {"t":"TEXT","who":"旁白","text":"倉房內潮紙翻飛，一名年輕人影站在窗邊。","lineId":"dock_01_intro"},
+      {"t":"CHOICE","lineId":"dock_01_choice","options":[
+        {"action":"CALL_GHOST_COMM","text":"舉起佛珠直接呼喚那名士兵","spiritId":"spirit_dock_soldier","nextLineId":"dock_01_followup"},
+        {"action":"GOTO_LINE","text":"先翻找倉房裡的線索","targetLineId":"dock_01_search"},
+        {"action":"END","text":"暫時離開倉房"}
+      ]},
+      {"t":"TEXT","who":"旁白","text":"你在夾層找出一頁名冊。","lineId":"dock_01_search"},
+      {"t":"GIVE_ITEM","itemId":"it_old_roster_page","lineId":"dock_01_item"},
+      {"t":"CHOICE","lineId":"dock_01_followup","options":[
+        {"action":"CALL_GHOST_COMM","text":"帶著名冊再次喚他開口","spiritId":"spirit_dock_soldier","nextLineId":"dock_01_mediation"},
+        {"action":"GOTO_LINE","text":"請文書幫忙安排後事","targetLineId":"dock_01_mediation"},
+        {"action":"GOTO_LINE","text":"再回頭翻找倉房","targetLineId":"dock_01_search"},
+        {"action":"END","text":"先收起名冊"}
+      ]},
+      {"t":"CALL_MEDIATION","npcId":"npc_dock_clerk","lineId":"dock_01_mediation"},
+      {"t":"TEXT","who":"亡魂","text":"「名字回來了，路也就回來了。」","lineId":"dock_01_result"},
+      {"t":"UPDATE_FLAG","flag":"已安息:spirit_dock_soldier","value":true,"lineId":"dock_01_flag"},
+      {"t":"END","lineId":"dock_01_end"}
     ],
     "service": {
       "spiritId": "spirit_dock_soldier",
@@ -54,24 +64,24 @@
     "id":"story_get_camphor",
     "anchor":"anchor_old_dock_depot",
     "steps":[
-      {"t":"TEXT","who":"NPC","text":"阿桃指著你手上的佛珠笑：「王嬸的？那你忙正事。」"},
-      {"t":"TEXT","who":"NPC","text":"她從籃子裡掏出一片檜木屑。"},
-      {"t":"GIVE_ITEM","itemId":"it_camphor_chip"},
-      {"t":"TEXT","who":"NPC","text":"「坑木香一到，有些人就記起該記的。」"},
-      {"t":"END"}
+      {"t":"TEXT","who":"NPC","text":"阿桃指著你手上的佛珠笑：「王嬸的？那你忙正事。」","lineId":"camphor_01"},
+      {"t":"TEXT","who":"NPC","text":"她從籃子裡掏出一片檜木屑。","lineId":"camphor_02"},
+      {"t":"GIVE_ITEM","itemId":"it_camphor_chip","lineId":"camphor_item"},
+      {"t":"TEXT","who":"NPC","text":"「坑木香一到，有些人就記起該記的。」","lineId":"camphor_03"},
+      {"t":"END","lineId":"camphor_end"}
     ]
   },
   {
     "id":"story_mine_01",
     "anchor":"anchor_mine_entrance",
     "steps":[
-      {"t":"TEXT","who":"旁白","text":"坑口陰涼，檜木香像舊記憶一樣慢慢浮起。"},
-      {"t":"CALL_GHOST_COMM","spiritId":"spirit_mine_ajin"},
-      {"t":"TEXT","who":"旁白","text":"你把名冊頁夾好，把要說的話寫在心裡。"},
-      {"t":"CALL_MEDIATION","npcId":"npc_miner_foreman"},
-      {"t":"TEXT","who":"亡魂","text":"「娘會認得我。」"},
-      {"t":"UPDATE_FLAG","flag":"已安息:spirit_mine_ajin","value":true},
-      {"t":"END"}
+      {"t":"TEXT","who":"旁白","text":"坑口陰涼，檜木香像舊記憶一樣慢慢浮起。","lineId":"mine_01_01"},
+      {"t":"CALL_GHOST_COMM","spiritId":"spirit_mine_ajin","lineId":"mine_01_call"},
+      {"t":"TEXT","who":"旁白","text":"你把名冊頁夾好，把要說的話寫在心裡。","lineId":"mine_01_02"},
+      {"t":"CALL_MEDIATION","npcId":"npc_miner_foreman","lineId":"mine_01_mediation"},
+      {"t":"TEXT","who":"亡魂","text":"「娘會認得我。」","lineId":"mine_01_03"},
+      {"t":"UPDATE_FLAG","flag":"已安息:spirit_mine_ajin","value":true,"lineId":"mine_01_flag"},
+      {"t":"END","lineId":"mine_01_end"}
     ],
     "service": {
       "spiritId": "spirit_mine_ajin",
