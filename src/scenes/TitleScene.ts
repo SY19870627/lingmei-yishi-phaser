@@ -7,18 +7,26 @@ export default class TitleScene extends ModuleScene {
     super('TitleScene');
   }
 
+  preload() {
+    this.load.image('title-background', 'images/title/base-title-screen-variant.png');
+  }
+
   create() {
     const w = this.scale.width;
     const h = this.scale.height;
     const router = this.registry.get('router') as Router | undefined;
     const saver = this.registry.get('saver') as SaveSystem | undefined;
 
+    const background = this.add.image(w / 2, h / 2, 'title-background');
+    const backgroundScale = Math.max(w / background.width, h / background.height);
+    background.setScale(backgroundScale);
+
     this.add
-      .text(w / 2, h / 2 - 60, '靈媒：意識流字卡', { fontSize: '36px', color: '#fff' })
+      .text(w / 2, h / 2 - 60, '靈媒：意識流字卡', { fontSize: '36px', color: '#443489ff' })
       .setOrigin(0.5);
 
     const start = this.add
-      .text(w / 2, h / 2, '開始遊戲', { fontSize: '22px', color: '#aaf' })
+      .text(w / 2, h / 2, '開始遊戲', { fontSize: '22px', color: '#621e1eff' })
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true });
 
@@ -27,12 +35,12 @@ export default class TitleScene extends ModuleScene {
     });
 
     const loadButton = this.add
-      .text(w / 2, h / 2 + 60, '讀取存檔', { fontSize: '22px', color: '#aaf' })
+      .text(w / 2, h / 2 + 60, '讀取存檔', { fontSize: '22px', color: '#621e1eff' })
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true });
 
     const message = this.add
-      .text(w / 2, h / 2 + 120, '', { fontSize: '18px', color: '#faa' })
+      .text(w / 2, h / 2 + 120, '', { fontSize: '18px', color: '#a65f2a' })
       .setOrigin(0.5);
 
     if (!router || !saver) {
