@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="1080" viewBox="0 0 720 1080">
+        <defs>
+          <pattern id="cardBackPtn" width="40" height="40" patternUnits="userSpaceOnUse">
+            <circle cx="20" cy="20" r="6" fill="#6B6B6B" opacity="0.06"/>
+            <circle cx="5" cy="5" r="3" fill="#6B6B6B" opacity="0.04"/>
+            <circle cx="35" cy="35" r="3" fill="#6B6B6B" opacity="0.04"/>
+          </pattern>
+        </defs>
+        <rect x="1" y="1" rx="24" ry="24" width="718" height="1078" fill="#F5E9D3" stroke="#1E1E1E" stroke-width="2"/>
+        <rect x="1" y="1" rx="24" ry="24" width="718" height="1078" fill="url(#cardBackPtn)" />
+        <text x="360" y="540" fill="#6B6B6B" font-size="86" font-family='system-ui, "Noto Sans TC", "PingFang TC", "Heiti TC", sans-serif' dominant-baseline="middle" text-anchor="middle">天語</text>
+      </svg>

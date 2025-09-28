@@ -8,16 +8,18 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "lint:data": "node scripts/integrity-check.mjs",
-    "test": "vitest"
+    "test": "vitest",
+    "gen:placeholders": "node scripts/gen-placeholders.mjs"
   },
   "devDependencies": {
     "@types/node": "^24.5.2",
     "ajv": "^8.17.1",
     "ajv-formats": "^3.0.1",
-    "vitest": "^2.1.4",
+    "sharp": "^0.34.4",
     "typescript": "~5.8.3",
     "vite": "^7.1.7",
-    "vite-tsconfig-paths": "^5.1.4"
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^2.1.4"
   },
   "dependencies": {
     "phaser": "^3.90.0"

@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+  
+  <defs>
+    <pattern id="ptn384960" width="64" height="64" patternUnits="userSpaceOnUse">
+      <rect x="0" y="0" width="64" height="64" fill="transparent"/>
+      <circle cx="38" cy="44" r="0.43" fill="#1E1E1E" opacity="0.06"/><circle cx="62" cy="2" r="0.96" fill="#1E1E1E" opacity="0.06"/><circle cx="8" cy="16" r="0.64" fill="#1E1E1E" opacity="0.06"/><circle cx="47" cy="35" r="0.70" fill="#1E1E1E" opacity="0.06"/><circle cx="28" cy="36" r="0.96" fill="#1E1E1E" opacity="0.06"/><circle cx="57" cy="29" r="0.31" fill="#1E1E1E" opacity="0.06"/><circle cx="1" cy="11" r="0.35" fill="#1E1E1E" opacity="0.06"/><circle cx="31" cy="21" r="0.93" fill="#1E1E1E" opacity="0.06"/><circle cx="4" cy="61" r="0.86" fill="#1E1E1E" opacity="0.06"/><circle cx="63" cy="21" r="0.50" fill="#1E1E1E" opacity="0.06"/><circle cx="31" cy="46" r="0.67" fill="#1E1E1E" opacity="0.06"/><circle cx="21" cy="32" r="0.90" fill="#1E1E1E" opacity="0.06"/><circle cx="14" cy="31" r="0.22" fill="#1E1E1E" opacity="0.06"/><circle cx="59" cy="7" r="0.66" fill="#1E1E1E" opacity="0.06"/><circle cx="36" cy="47" r="0.46" fill="#1E1E1E" opacity="0.06"/><circle cx="27" cy="40" r="0.78" fill="#1E1E1E" opacity="0.06"/><circle cx="39" cy="36" r="0.83" fill="#1E1E1E" opacity="0.06"/><circle cx="27" cy="32" r="0.50" fill="#1E1E1E" opacity="0.06"/><circle cx="13" cy="24" r="0.86" fill="#1E1E1E" opacity="0.06"/><circle cx="3" cy="27" r="0.21" fill="#1E1E1E" opacity="0.06"/><circle cx="35" cy="3" r="0.43" fill="#1E1E1E" opacity="0.06"/><circle cx="42" cy="59" r="0.69" fill="#1E1E1E" opacity="0.06"/><circle cx="53" cy="29" r="0.92" fill="#1E1E1E" opacity="0.06"/><circle cx="45" cy="61" r="0.35" fill="#1E1E1E" opacity="0.06"/><circle cx="8" cy="40" r="0.97" fill="#1E1E1E" opacity="0.06"/><circle cx="29" cy="13" r="0.73" fill="#1E1E1E" opacity="0.06"/><circle cx="12" cy="51" r="0.56" fill="#1E1E1E" opacity="0.06"/><circle cx="57" cy="16" r="0.71" fill="#1E1E1E" opacity="0.06"/>
+    </pattern>
+  </defs>
+  <rect x="1" y="1" rx="23" ry="23" width="1278" height="718" fill="#F5E9D3" /><rect x="1" y="1" rx="23" ry="23" width="1278" height="718" fill="url(#ptn384960)" />
+  
+  
+  <g opacity="0.2" transform="translate(974.4,537.6)">
+    <path d="
+      M 28.160000000000004 110.88
+      C 70.4 79.2, 126.72000000000001 79.2, 168.96 110.88
+      C 225.28000000000003 110.88, 253.44000000000003 134.64000000000001, 225.28000000000003 150.48
+      C 168.96 150.48, 126.72000000000001 134.64000000000001, 98.56 134.64000000000001
+      C 70.4 134.64000000000001, 50.688 126.72000000000001, 28.160000000000004 110.88
+      Z" fill="#6B6B6B"/>
+  </g>
+  <rect x="0.5" y="0.5" rx="24" ry="24" width="1279" height="719" fill="none" stroke="#1E1E1E" stroke-width="2" />
+  <text x="640" y="360" fill="#6B6B6B" font-size="51" font-family='system-ui, "Noto Sans TC", "PingFang TC", "Heiti TC", sans-serif' dominant-baseline="middle" text-anchor="middle">劇情</text><text x="640" y="446.4" fill="#6B6B6B" font-size="18" font-family='system-ui, "Noto Sans TC", "PingFang TC", "Heiti TC", sans-serif' dominant-baseline="middle" text-anchor="middle">Story</text>
+  
+        <rect x="0" y="0" width="1280" height="8" fill="#000000" opacity="0.8"/>
+        <rect x="0" y="712" width="1280" height="8" fill="#000000" opacity="0.8"/>
+      
+</svg>

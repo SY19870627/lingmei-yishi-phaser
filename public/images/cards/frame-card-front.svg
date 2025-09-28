@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="1080" viewBox="0 0 720 1080">
+  
+  <defs>
+    <pattern id="ptn819646" width="64" height="64" patternUnits="userSpaceOnUse">
+      <rect x="0" y="0" width="64" height="64" fill="transparent"/>
+      <circle cx="56" cy="32" r="0.28" fill="#1E1E1E" opacity="0.06"/><circle cx="12" cy="51" r="0.69" fill="#1E1E1E" opacity="0.06"/><circle cx="29" cy="37" r="0.46" fill="#1E1E1E" opacity="0.06"/><circle cx="51" cy="62" r="0.48" fill="#1E1E1E" opacity="0.06"/><circle cx="10" cy="25" r="1.00" fill="#1E1E1E" opacity="0.06"/><circle cx="8" cy="23" r="0.98" fill="#1E1E1E" opacity="0.06"/><circle cx="46" cy="30" r="1.00" fill="#1E1E1E" opacity="0.06"/><circle cx="10" cy="43" r="0.31" fill="#1E1E1E" opacity="0.06"/><circle cx="3" cy="12" r="0.92" fill="#1E1E1E" opacity="0.06"/><circle cx="27" cy="22" r="0.34" fill="#1E1E1E" opacity="0.06"/><circle cx="14" cy="40" r="0.75" fill="#1E1E1E" opacity="0.06"/><circle cx="24" cy="18" r="0.81" fill="#1E1E1E" opacity="0.06"/><circle cx="62" cy="52" r="0.33" fill="#1E1E1E" opacity="0.06"/><circle cx="57" cy="45" r="0.33" fill="#1E1E1E" opacity="0.06"/><circle cx="55" cy="34" r="0.71" fill="#1E1E1E" opacity="0.06"/><circle cx="41" cy="7" r="0.39" fill="#1E1E1E" opacity="0.06"/><circle cx="12" cy="23" r="0.94" fill="#1E1E1E" opacity="0.06"/><circle cx="8" cy="18" r="0.78" fill="#1E1E1E" opacity="0.06"/><circle cx="7" cy="30" r="0.99" fill="#1E1E1E" opacity="0.06"/><circle cx="61" cy="60" r="0.93" fill="#1E1E1E" opacity="0.06"/><circle cx="62" cy="59" r="0.23" fill="#1E1E1E" opacity="0.06"/><circle cx="54" cy="21" r="0.86" fill="#1E1E1E" opacity="0.06"/><circle cx="32" cy="33" r="0.50" fill="#1E1E1E" opacity="0.06"/><circle cx="44" cy="5" r="0.60" fill="#1E1E1E" opacity="0.06"/><circle cx="1" cy="15" r="0.79" fill="#1E1E1E" opacity="0.06"/><circle cx="24" cy="37" r="0.55" fill="#1E1E1E" opacity="0.06"/><circle cx="18" cy="18" r="0.73" fill="#1E1E1E" opacity="0.06"/><circle cx="10" cy="52" r="0.21" fill="#1E1E1E" opacity="0.06"/>
+    </pattern>
+  </defs>
+  
+  <rect x="1" y="1" width="718" height="220" rx="23" fill="#000000" opacity="0.08"/><rect x="1" y="899" width="718" height="180" rx="23" fill="#000000" opacity="0.08"/>
+  
+  <rect x="0.5" y="0.5" rx="24" ry="24" width="719" height="1079" fill="none" stroke="#1E1E1E" stroke-width="2" />
+  
+  
+</svg>
