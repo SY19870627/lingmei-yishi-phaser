@@ -8,6 +8,7 @@ import { LocalStorageSaver } from '@core/Saver';
 import AutoSave from '@core/AutoSave';
 import { DataValidator } from '@core/DataValidator';
 import { GameSettings } from '@core/Settings';
+import AudioBus from '@core/AudioBus';
 
 export default class BootScene extends Phaser.Scene {
   constructor(){ super('BootScene'); }
@@ -60,6 +61,7 @@ export default class BootScene extends Phaser.Scene {
     this.game.registry.set('aio', aio);
     this.game.registry.set('bus', bus);
     this.game.registry.set('saver', saver);
+    this.game.registry.set('audioBus', new AudioBus(this.sound));
 
     this.scene.start('TitleScene');
   }
