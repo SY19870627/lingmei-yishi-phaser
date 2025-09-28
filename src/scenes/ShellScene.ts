@@ -34,6 +34,7 @@ export default class ShellScene extends ModuleScene {
 
   preload() {
     this.load.image('shell-background', 'images/title/base-title-screen-variant_02.png');
+    this.load.image('protagonist', 'images/protagonist/Tsai-Hui-Ling-8Y.png');
   }
 
   create() {
@@ -45,6 +46,16 @@ export default class ShellScene extends ModuleScene {
     const background = this.add.image(width / 2, height / 2, 'shell-background');
     const backgroundScale = Math.max(width / background.width, height / background.height);
     background.setScale(backgroundScale);
+    background.setDepth(-1);
+
+    const protagonist = this.add.image(width * 0.2, height - 32, 'protagonist');
+    protagonist.setOrigin(0.5, 1);
+    const targetHeight = height * 0.75;
+    const targetWidth = width * 0.28;
+    const heightScale = targetHeight / protagonist.height;
+    const widthScale = targetWidth / protagonist.width;
+    const protagonistScale = Math.min(1, heightScale, widthScale);
+    protagonist.setScale(protagonistScale);
 
     this.lastLocation = world?.data?.位置;
 
