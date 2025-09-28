@@ -74,6 +74,8 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
   async create() {
     const { width, height } = this.scale;
 
+    this.resetStoryState();
+
     this.textBox = this.add
       .text(width / 2, height / 2 - 40, '', {
         fontSize: '24px',
@@ -138,6 +140,27 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
       const message = error instanceof Error ? error.message : String(error);
       this.showErrorAndExit(`讀取劇情時發生錯誤：${message}`);
     }
+  }
+
+  private resetStoryState() {
+    this.steps = [];
+    this.stepIndex = 0;
+    this.awaitingInput = false;
+    this.awaitingChoice = false;
+    this.finished = false;
+    this.flagsUpdated = new Set<string>();
+    this.storyId = undefined;
+    this.storyLoaded = false;
+    this.skipNextMediationStep = false;
+    this.activeSpiritId = undefined;
+    this.spiritsLoaded = false;
+    this.spiritCache.clear();
+    this.pendingLineJump = undefined;
+    if (this.choiceTexts.length) {
+      this.choiceTexts.forEach((text) => text.destroy());
+    }
+    this.choiceTexts = [];
+    this.lineIndexById.clear();
   }
 
   private advance() {
