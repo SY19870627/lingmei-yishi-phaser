@@ -1,6 +1,8 @@
 import type { GhostOption, Spirit, WordCard, WorldStateData } from './Types';
 import { seedFrom, type RandomGenerator } from './Seed';
 import type { GameSettings } from './Settings';
+import type { ProviderAdapter } from './ProviderAdapter';
+import { WebProviderAdapter } from './ProviderAdapter';
 
 export interface GhostOptionContext {
   spirit: Spirit;
@@ -12,14 +14,18 @@ export interface GhostOptionContext {
 export class AiOrchestrator {
   mode: 'local' | 'provider' = 'local';
   private readonly settings?: GameSettings;
+  private readonly providerAdapter: ProviderAdapter;
 
-  constructor(settings?: GameSettings) {
+  constructor(settings?: GameSettings, providerAdapter: ProviderAdapter = new WebProviderAdapter()) {
     this.settings = settings;
+    this.providerAdapter = providerAdapter;
   }
 
-  async genGhostOptions({ seed }: GhostOptionContext): Promise<{ options: GhostOption[]; tone: string }> {
-    if (this.mode !== 'local') {
-      throw new Error('Remote provider 尚未實作。');
+  async genGhostOptions(context: GhostOptionContext): Promise<{ options: GhostOption[]; tone: string }> {
+    const { seed } = context;
+    if (this.mode === 'provider') {
+      const response = await this.providerAdapter.requestChatJSON(context);
+      return response as { options: GhostOption[]; tone: string };
     }
 
     const random = this.createRandom(seed ?? '');
