@@ -12,58 +12,60 @@ export default class TitleScene extends ModuleScene {
   }
 
   create() {
-    const w = this.scale.width;
-    const h = this.scale.height;
-    const router = this.registry.get('router') as Router | undefined;
-    const saver = this.registry.get('saver') as SaveSystem | undefined;
+  const w = this.scale.width;
+  const h = this.scale.height;
+  const router = this.registry.get('router') as Router | undefined;
+  const saver = this.registry.get('saver') as SaveSystem | undefined;
 
-    const background = this.add.image(w / 2, h / 2, 'title-background');
-    const backgroundScale = Math.max(w / background.width, h / background.height);
-    background.setScale(backgroundScale);
+  const background = this.add.image(w / 2, h / 2, 'title-background');
+  const backgroundScale = Math.max(w / background.width, h / background.height);
+  background.setScale(backgroundScale);
 
-    this.add
-      .text(w / 2, h / 2 - 60, '靈媒：意識流字卡', { fontSize: '36px', color: '#443489ff' })
-      .setOrigin(0.5);
+  // 共用中文字樣式：加上 padding-top 避免被裁切
+  const zhBase = {
+    fontFamily: 'Noto Sans TC, PingFang TC, "Microsoft JhengHei", sans-serif',
+    padding: { top: 6, bottom: 2 },      // 關鍵：上方留白
+    // 建議用 6 碼色碼；Phaser 對 8 碼 (#RRGGBBAA) 支援不一
+    color: '#443489'
+  } as const;
 
-    const start = this.add
-      .text(w / 2, h / 2, '開始遊戲', { fontSize: '22px', color: '#621e1eff' })
-      .setOrigin(0.5)
-      .setInteractive({ useHandCursor: true });
+  this.add
+    .text(w / 2, h / 2 - 60, '靈媒：意識流字卡', { ...zhBase, fontSize: '36px' })
+    .setOrigin(0.5, 0.5);                 // 如還有被吃掉，可試 0.52～0.55
 
-    start.on('pointerup', () => {
-      this.scene.start('ShellScene');
-    });
+  const start = this.add
+    .text(w / 2, h / 2, '開始遊戲', { ...zhBase, fontSize: '22px', color: '#621e1e' })
+    .setOrigin(0.5, 0.5)
+    .setInteractive({ useHandCursor: true });
 
-    const loadButton = this.add
-      .text(w / 2, h / 2 + 60, '讀取存檔', { fontSize: '22px', color: '#621e1eff' })
-      .setOrigin(0.5)
-      .setInteractive({ useHandCursor: true });
+  start.on('pointerup', () => this.scene.start('ShellScene'));
 
-    const message = this.add
-      .text(w / 2, h / 2 + 120, '', { fontSize: '18px', color: '#a65f2a' })
-      .setOrigin(0.5);
+  const loadButton = this.add
+    .text(w / 2, h / 2 + 60, '讀取存檔', { ...zhBase, fontSize: '22px', color: '#621e1e' })
+    .setOrigin(0.5, 0.5)
+    .setInteractive({ useHandCursor: true });
 
-    if (!router || !saver) {
-      loadButton.setAlpha(0.4).disableInteractive();
-      message.setText('目前無法讀取存檔。');
-      return;
-    }
+  const message = this.add
+    .text(w / 2, h / 2 + 120, '', { ...zhBase, fontSize: '18px', color: '#a65f2a' })
+    .setOrigin(0.5, 0.5);
 
-    loadButton.on('pointerup', async () => {
-      try {
-        const result = await router.push<void, { slot: number }>('LoadScene');
-        const slot = result?.slot ?? 0;
-        const loaded = await saver.load(slot);
-        if (loaded) {
-          this.scene.start('ShellScene');
-        } else {
-          message.setText('存檔不存在或已損毀。');
-          this.time.delayedCall(2400, () => message.setText(''));
-        }
-      } catch {
-        // 使用者取消讀取，忽略即可。
-      }
-    });
+  if (!router || !saver) {
+    loadButton.setAlpha(0.4).disableInteractive();
+    message.setText('目前無法讀取存檔。');
+    return;
   }
-}
 
+  loadButton.on('pointerup', async () => {
+    try {
+      const result = await router.push<void, { slot: number }>('LoadScene');
+      const slot = result?.slot ?? 0;
+      const loaded = await saver.load(slot);
+      if (loaded) this.scene.start('ShellScene');
+      else {
+        message.setText('存檔不存在或已損毀。');
+        this.time.delayedCall(2400, () => message.setText(''));
+      }
+    } catch { /* 使用者取消 */ }
+  });
+}
+}

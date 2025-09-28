@@ -17,6 +17,13 @@ export default class ShellScene extends ModuleScene {
   private mapThumbImage?: Phaser.GameObjects.Image;
   private mapThumbOverlay?: Phaser.GameObjects.Graphics;
 
+  // ✅ 中文通用樣式（關鍵：padding.top）
+  private readonly zhBaseStyle = {
+    fontFamily: 'Noto Sans TC, PingFang TC, "Microsoft JhengHei", sans-serif',
+    padding: { top: 6, bottom: 2, left: 0, right: 0 },
+    color: '#621e1e' // 改成 #RRGGBB
+  } as const;
+
   private readonly handleResize = (gameSize: Phaser.Structs.Size) => {
     this.positionThumbnail(gameSize.width);
   };
@@ -67,10 +74,12 @@ export default class ShellScene extends ModuleScene {
       this.destroyThumbnail();
     });
 
+    // HUD（左上角）— 加 padding 並稍微下移避免切頂
     const hudText = this.add
-      .text(60, 16, '', {
+      .text(60, 18, '', {
+        ...this.zhBaseStyle,
         fontSize: '16px',
-        color: '#fff'
+        color: '#ffffff'
       })
       .setOrigin(0, 0);
 
@@ -89,15 +98,15 @@ export default class ShellScene extends ModuleScene {
     };
 
     updateHud();
-
     this.time.addEvent({ delay: 200, loop: true, callback: updateHud });
 
+    // 共用按鈕樣式
+    const btn = (fontSize = 24) =>
+      ({ ...this.zhBaseStyle, fontSize: `${fontSize}px` } as Phaser.Types.GameObjects.Text.TextStyle);
+
     const mapButton = this.add
-      .text(width / 2, height / 2, '開啟地圖', {
-        fontSize: '24px',
-        color: '#621e1eff'
-      })
-      .setOrigin(0.5)
+      .text(width / 2, height / 2, '開啟地圖', btn())
+      .setOrigin(0.5, 0.52) // 稍降基準，避免切頂
       .setInteractive({ useHandCursor: true });
 
     mapButton.on('pointerup', () => {
@@ -105,34 +114,23 @@ export default class ShellScene extends ModuleScene {
     });
 
     const inventoryButton = this.add
-      .text(width / 2, height / 2 + 60, '物品', {
-        fontSize: '24px',
-        color: '#621e1eff'
-      })
-      .setOrigin(0.5)
+      .text(width / 2, height / 2 + 60, '物品', btn())
+      .setOrigin(0.5, 0.52)
       .setInteractive({ useHandCursor: true });
 
     const pickedLabel = this.add
-      .text(16, height - 16, '選擇的物品：無', {
-        fontSize: '16px',
-        color: '#621e1eff'
-      })
+      .text(16, height - 16, '選擇的物品：無', { ...this.zhBaseStyle, fontSize: '16px' })
       .setOrigin(0, 1);
 
     inventoryButton.on('pointerup', async () => {
-      if (!this.router) {
-        return;
-      }
+      if (!this.router) return;
       const picked = await this.router.push<string | null>('InventoryScene');
       pickedLabel.setText(`選擇的物品：${picked ?? '無'}`);
     });
 
     const wordCardsButton = this.add
-      .text(width / 2, height / 2 + 120, '字卡', {
-        fontSize: '24px',
-        color: '#621e1eff'
-      })
-      .setOrigin(0.5)
+      .text(width / 2, height / 2 + 120, '字卡', btn())
+      .setOrigin(0.5, 0.52)
       .setInteractive({ useHandCursor: true });
 
     wordCardsButton.on('pointerup', () => {
@@ -140,11 +138,8 @@ export default class ShellScene extends ModuleScene {
     });
 
     const hintsButton = this.add
-      .text(width / 2, height / 2 + 180, '提示', {
-        fontSize: '24px',
-        color: '#621e1eff'
-      })
-      .setOrigin(0.5)
+      .text(width / 2, height / 2 + 180, '提示', btn())
+      .setOrigin(0.5, 0.52)
       .setInteractive({ useHandCursor: true });
 
     hintsButton.on('pointerup', () => {
@@ -152,11 +147,8 @@ export default class ShellScene extends ModuleScene {
     });
 
     const settingsButton = this.add
-      .text(width / 2, height / 2 + 240, '設定', {
-        fontSize: '24px',
-        color: '#621e1eff'
-      })
-      .setOrigin(0.5)
+      .text(width / 2, height / 2 + 240, '設定', btn())
+      .setOrigin(0.5, 0.52)
       .setInteractive({ useHandCursor: true });
 
     settingsButton.on('pointerup', () => {
@@ -226,9 +218,7 @@ export default class ShellScene extends ModuleScene {
       }
     }
 
-    if (this.pendingMapId !== mapDef.id) {
-      return;
-    }
+    if (this.pendingMapId !== mapDef.id) return;
 
     this.pendingMapId = undefined;
     this.displayThumbnail(textureKey);
@@ -327,10 +317,7 @@ export default class ShellScene extends ModuleScene {
   }
 
   private positionThumbnail(width: number) {
-    if (!this.mapThumbContainer) {
-      return;
-    }
-
+    if (!this.mapThumbContainer) return;
     const margin = 24;
     this.mapThumbContainer.setPosition(width - 160 - margin, margin);
   }
@@ -347,10 +334,7 @@ export default class ShellScene extends ModuleScene {
   }
 
   private findAnchorByLocation(location: string | undefined): Anchor | undefined {
-    if (!location) {
-      return undefined;
-    }
-
+    if (!location) return undefined;
     return this.anchors.find((anchor) => anchor.地點 === location);
   }
 
@@ -376,9 +360,7 @@ export default class ShellScene extends ModuleScene {
         resolve();
       };
       const onError = (file: Phaser.Loader.File) => {
-        if (file.key !== key) {
-          return;
-        }
+        if (file.key !== key) return;
         cleanup();
         reject(new Error(`Map texture failed to load: ${url}`));
       };
