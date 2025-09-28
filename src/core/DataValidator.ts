@@ -1,5 +1,5 @@
 import Ajv from 'ajv/dist/2020';
-import type { ErrorObject, ValidateFunction } from 'ajv';
+import type { AnySchema, ErrorObject, ValidateFunction } from 'ajv';
 import addFormats from 'ajv-formats';
 import sacredItemSchema from '../../schemas/sacred-item.schema.json' assert { type: 'json' };
 import wordcardSchema from '../../schemas/wordcard.schema.json' assert { type: 'json' };
@@ -18,7 +18,7 @@ type SchemaName =
   | 'story'
   | 'map';
 
-const SCHEMAS: Record<SchemaName, unknown> = {
+const SCHEMAS: Record<SchemaName, AnySchema> = {
   'sacred-item': sacredItemSchema,
   'wordcard': wordcardSchema,
   'npc': npcSchema,
@@ -37,7 +37,7 @@ export class DataValidator {
     addFormats(this.ajv);
     this.validators = new Map();
 
-    for (const [name, schema] of Object.entries(SCHEMAS) as [SchemaName, unknown][]){
+    for (const [name, schema] of Object.entries(SCHEMAS) as [SchemaName, AnySchema][]){
       this.validators.set(name, this.ajv.compile(schema));
     }
   }

@@ -73,6 +73,18 @@
             {
               "type": "object",
               "additionalProperties": false,
+              "required": ["t", "effectId"],
+              "properties": {
+                "t": { "const": "SCREEN_EFFECT" },
+                "effectId": { "type": "string" },
+                "duration": { "type": "number", "minimum": 0 },
+                "color": { "type": "string" },
+                "lineId": { "type": "string" }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
               "required": ["t"],
               "properties": {
                 "t": { "const": "END" },
