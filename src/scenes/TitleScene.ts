@@ -9,17 +9,24 @@ export default class TitleScene extends ModuleScene {
 
   preload() {
     this.load.image('title-background', 'images/title/base-title-screen-variant.png');
+    this.load.image('title-word', 'images/title/base-title-word.png');
   }
 
   create() {
-  const w = this.scale.width;
-  const h = this.scale.height;
-  const router = this.registry.get('router') as Router | undefined;
-  const saver = this.registry.get('saver') as SaveSystem | undefined;
+    const w = this.scale.width;
+    const h = this.scale.height;
+    const router = this.registry.get('router') as Router | undefined;
+    const saver = this.registry.get('saver') as SaveSystem | undefined;
 
-  const background = this.add.image(w / 2, h / 2, 'title-background');
-  const backgroundScale = Math.max(w / background.width, h / background.height);
-  background.setScale(backgroundScale);
+    const background = this.add.image(w / 2, h / 2, 'title-background');
+    const backgroundScale = Math.max(w / background.width, h / background.height);
+    background.setScale(backgroundScale);
+
+    const titleWord = this.add.image(w / 2, h / 2 - 120, 'title-word').setOrigin(0.5);
+    const maxTitleWidth = w * 0.6;
+    if (titleWord.displayWidth > maxTitleWidth) {
+      titleWord.setScale(maxTitleWidth / titleWord.displayWidth);
+    }
 
   // 共用中文字樣式：加上 padding-top 避免被裁切
   const zhBase = {
@@ -28,25 +35,21 @@ export default class TitleScene extends ModuleScene {
     // 建議用 6 碼色碼；Phaser 對 8 碼 (#RRGGBBAA) 支援不一
     color: '#443489'
   } as const;
-
-  this.add
-    .text(w / 2, h / 2 - 60, '靈媒：意識流字卡', { ...zhBase, fontSize: '36px' })
-    .setOrigin(0.5, 0.5);                 // 如還有被吃掉，可試 0.52～0.55
-
+  
   const start = this.add
-    .text(w / 2, h / 2, '開始遊戲', { ...zhBase, fontSize: '22px', color: '#621e1e' })
+    .text(w / 2, h / 2 + 120, '開始遊戲', { ...zhBase, fontSize: '22px', color: '#621e1e' })
     .setOrigin(0.5, 0.5)
     .setInteractive({ useHandCursor: true });
 
   start.on('pointerup', () => this.scene.start('ShellScene'));
 
   const loadButton = this.add
-    .text(w / 2, h / 2 + 60, '讀取存檔', { ...zhBase, fontSize: '22px', color: '#621e1e' })
+    .text(w / 2, h / 2 + 180, '讀取存檔', { ...zhBase, fontSize: '22px', color: '#621e1e' })
     .setOrigin(0.5, 0.5)
     .setInteractive({ useHandCursor: true });
 
   const message = this.add
-    .text(w / 2, h / 2 + 120, '', { ...zhBase, fontSize: '18px', color: '#a65f2a' })
+    .text(w / 2, h / 2 + 240, '', { ...zhBase, fontSize: '18px', color: '#a65f2a' })
     .setOrigin(0.5, 0.5);
 
   if (!router || !saver) {
