@@ -1,4 +1,4 @@
-# 內容編輯指引
+﻿# 內容編輯指引
 
 本文件說明如何在資料檔中新增亡魂（Spirit）、場域錨點（Anchor）與劇情段落（Story），並解釋「唯一性鍵」欄位的規範。所有資料均存放於 `assets/data/*.json` 中，可搭配 `docs/data-schemas.md` 與 `schemas/*.schema.json` 確認欄位需求。
 
@@ -35,6 +35,7 @@
    - `id`：全域唯一，通常以錨點或亡魂為前綴，例如 `story_port_market_01`。
    - `anchor`：指向觸發劇情的 Anchor `id`。
    - `steps`：依序列出劇情步驟，類型需符合 `schemas/story.schema.json` 的定義：
+   - `service`：記錄該劇情對應的亡魂（`spiritId`）與觸發行數（`triggerLine`，從 1 開始計算）。
      - `TEXT`：一般敘事，需含 `who`（說話者）與 `text`（內容），可選 `updates` 記錄旗標變化描述。
      - `CALL_GHOST_COMM`：啟動亡魂交談，需提供 `spiritId`。
      - `CALL_MEDIATION`：呼叫凡人協調，需提供 `npcId`。

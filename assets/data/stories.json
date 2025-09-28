@@ -26,7 +26,11 @@
       {"t":"TEXT","who":"亡魂","text":"「香味到了，她就知道。」"},
       {"t":"UPDATE_FLAG","flag":"已安息:spirit_wang_ayi","value":true},
       {"t":"END"}
-    ]
+    ],
+    "service": {
+      "spiritId": "spirit_wang_ayi",
+      "triggerLine": 3
+    }
   },
   {
     "id":"story_dock_01",
@@ -40,7 +44,11 @@
       {"t":"TEXT","who":"亡魂","text":"「名字回來了，路也就回來了。」"},
       {"t":"UPDATE_FLAG","flag":"已安息:spirit_dock_soldier","value":true},
       {"t":"END"}
-    ]
+    ],
+    "service": {
+      "spiritId": "spirit_dock_soldier",
+      "triggerLine": 2
+    }
   },
   {
     "id":"story_get_camphor",
@@ -64,6 +72,10 @@
       {"t":"TEXT","who":"亡魂","text":"「娘會認得我。」"},
       {"t":"UPDATE_FLAG","flag":"已安息:spirit_mine_ajin","value":true},
       {"t":"END"}
-    ]
+    ],
+    "service": {
+      "spiritId": "spirit_mine_ajin",
+      "triggerLine": 2
+    }
   }
 ]

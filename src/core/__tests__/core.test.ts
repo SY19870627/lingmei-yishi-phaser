@@ -1,9 +1,9 @@
-import { describe, expect, it } from 'vitest';
+﻿import { describe, expect, it } from 'vitest';
 
 import { parseCondition } from '../SpawnDirector';
 import HintsManager from '../HintsManager';
 import { seedFrom } from '../Seed';
-import type { Anchor, Spirit } from '../Types';
+import type { Anchor, Spirit, StoryNode } from '../Types';
 import type { WorldState } from '../WorldState';
 
 describe('parseCondition', () => {
@@ -39,7 +39,7 @@ describe('HintsManager.gather', () => {
       },
     } as unknown as WorldState;
 
-    const hints = HintsManager.gather(world, undefined, undefined);
+    const hints = HintsManager.gather(world, undefined, undefined, undefined);
 
     expect(hints).toEqual([
       { id: 'ghost.hint2', text: '和柳葉有關', kind: '線索' },
@@ -63,10 +63,21 @@ describe('HintsManager.gather', () => {
       },
     ];
     const anchors: Anchor[] = [
-      { id: 'anchor-1', 地點: '祠堂', 條件: [], 服務靈: 'spirit-1' },
+      { id: 'anchor-1', 地點: '祠堂', 條件: [] }
+    ];
+    const stories: StoryNode[] = [
+      {
+        id: 'story-1',
+        anchor: 'anchor-1',
+        service: { spiritId: 'spirit-1', triggerLine: 1 },
+        steps: [
+          { t: 'CALL_GHOST_COMM', spiritId: 'spirit-1' },
+          { t: 'END' }
+        ]
+      }
     ];
 
-    const hints = HintsManager.gather(baseWorld, spirits, anchors);
+    const hints = HintsManager.gather(baseWorld, spirits, anchors, stories);
 
     expect(hints).toContainEqual({
       id: 'obsession:obs-1',
@@ -91,10 +102,21 @@ describe('HintsManager.gather', () => {
       },
     ];
     const anchors: Anchor[] = [
-      { id: 'anchor-2', 地點: '靈堂', 條件: [], 服務靈: 'spirit-2' },
+      { id: 'anchor-2', 地點: '碼頭', 條件: [] }
+    ];
+    const stories: StoryNode[] = [
+      {
+        id: 'story-2',
+        anchor: 'anchor-2',
+        service: { spiritId: 'spirit-2', triggerLine: 1 },
+        steps: [
+          { t: 'CALL_GHOST_COMM', spiritId: 'spirit-2' },
+          { t: 'END' }
+        ]
+      }
     ];
 
-    const hints = HintsManager.gather(baseWorld, spirits, anchors);
+    const hints = HintsManager.gather(baseWorld, spirits, anchors, stories);
 
     expect(hints).toContainEqual({
       id: 'obsession:obs-2',

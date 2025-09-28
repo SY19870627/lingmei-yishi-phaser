@@ -1,4 +1,4 @@
-import Phaser from 'phaser';
+﻿import Phaser from 'phaser';
 import { ModuleScene, Router } from '@core/Router';
 import { DataRepo } from '@core/DataRepo';
 import { WorldState } from '@core/WorldState';
@@ -142,7 +142,7 @@ export default class MapScene extends ModuleScene {
     this.locationEntries.forEach(({ text }) => text.destroy());
     this.locationEntries = [];
 
-    this.accessibleAnchors = this.director.listAccessibleAnchors(this.world, this.anchors, this.spirits);
+    this.accessibleAnchors = this.director.listAccessibleAnchors(this.world, this.anchors, this.stories, this.spirits);
 
     if (this.accessibleAnchors.length === 0) {
       const text = this.add
@@ -390,7 +390,7 @@ export default class MapScene extends ModuleScene {
       return;
     }
 
-    const hints = HintsManager.gather(this.world, this.spirits, this.anchors);
+    const hints = HintsManager.gather(this.world, this.spirits, this.anchors, this.stories);
     this.hintIndicator.setVisible(hints.length > 0);
   }
 }

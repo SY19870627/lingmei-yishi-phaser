@@ -8,10 +8,11 @@ export interface Spirit {
   特例?:{ 類型:"失我靈"|"拒談靈"; 關鍵物?:string; 關鍵人物?:string; 拒談觸發?:string; };
   限制?:{ 唯一性鍵:string[]; };
 }
-export interface Anchor { id:string; 地點:string; 條件:string[]; mapId?:string; 服務靈:string; 完成後?:{裝飾?:string;回聲腳本?:string;} }
+export interface Anchor { id:string; 地點:string; 條件:string[]; mapId?:string; 完成後?:{裝飾?:string;回聲腳本?:string;} }
 export interface NPC { id:string; 稱呼:string; 性格:string[]; 避雷:string[]; 轉折階段:("抗拒"|"猶豫"|"願試"|"承諾")[]; 可被說動的點:string[]; 到場條件:string[]; }
+export interface StoryService { spiritId:string; triggerLine:number; }
 export interface StoryNode {
-  id:string; anchor:string;
+  id:string; anchor:string; service?:StoryService;
   steps:( {t:"TEXT"; who:"旁白"|"亡魂"|"NPC"|"玩家"; text:string; updates?:string[]}
         | {t:"CALL_GHOST_COMM"; spiritId:string}
         | {t:"CALL_MEDIATION"; npcId:string}

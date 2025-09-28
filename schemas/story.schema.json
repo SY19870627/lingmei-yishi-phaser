@@ -75,6 +75,23 @@
             }
           ]
         }
+      },
+      "service": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "spiritId",
+          "triggerLine"
+        ],
+        "properties": {
+          "spiritId": {
+            "type": "string"
+          },
+          "triggerLine": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
       }
     }
   }

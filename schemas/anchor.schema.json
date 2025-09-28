@@ -9,8 +9,7 @@
       "id",
       "地點",
       "條件",
-      "mapId",
-      "服務靈"
+      "mapId"
     ],
     "properties": {
       "id": {
@@ -26,9 +25,6 @@
         }
       },
       "mapId": {
-        "type": "string"
-      },
-      "服務靈": {
         "type": "string"
       },
       "完成後": {

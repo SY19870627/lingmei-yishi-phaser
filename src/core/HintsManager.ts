@@ -1,4 +1,5 @@
-import type { Anchor, Spirit } from './Types';
+﻿import type { Anchor, Spirit, StoryNode } from './Types';
+import { buildStoryServiceIndex } from './StoryServices';
 import type { WorldState } from './WorldState';
 
 export type HintKind = '線索' | '行動' | '物品';
@@ -13,7 +14,8 @@ export class HintsManager {
   static gather(
     world: WorldState | undefined,
     spirits: Spirit[] | undefined,
-    anchors: Anchor[] | undefined
+    anchors: Anchor[] | undefined,
+    stories: StoryNode[] | undefined
   ): HintEntry[] {
     const results: HintEntry[] = [];
     const seen = new Set<string>();
@@ -23,10 +25,14 @@ export class HintsManager {
 
     const spiritList = Array.isArray(spirits) ? spirits : [];
     const anchorList = Array.isArray(anchors) ? anchors : [];
+    const storyList = Array.isArray(stories) ? stories : [];
+    const serviceIndex = buildStoryServiceIndex(storyList);
+    const anchorMap = new Map(anchorList.map((anchor) => [anchor.id, anchor]));
 
     spiritList.forEach((spirit) => {
-      const relatedAnchor = anchorList.find((anchor) => anchor.服務靈 === spirit.id);
-      const location = relatedAnchor?.地點 ?? '相關地點';
+      const service = serviceIndex.bySpirit.get(spirit.id);
+      const relatedAnchor = service ? anchorMap.get(service.anchorId) : undefined;
+      const location = relatedAnchor?.地點 ?? '未知地點';
 
       spirit.執念?.forEach((obsession) => {
         if (!obsession?.id) {

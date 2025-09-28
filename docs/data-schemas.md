@@ -1,4 +1,4 @@
-# 資料結構總覽
+﻿# 資料結構總覽
 以下整理 `src/core/Types.ts` 內使用的資料 Schema，對應到 `/assets/data/*.json`。
 
 ## Miasma
@@ -105,8 +105,8 @@
 ## JSON Schema 檔案對照
 - `schemas/sacred-item.schema.json`：`SacredItem` 的 `id`、`名`、`來源`、`用途`、`鉤子`。
 - `schemas/wordcard.schema.json`：`WordCard` 的 `id`、`字`、`標籤`、`備註`。
-- `schemas/npc.schema.json`：`NPC` 的 `id`、`稱呼`、`性格`、`避雷`、`轉折階段`、`可被說動的點`、`到場條件`。
-- `schemas/spirit.schema.json`：`Spirit` 的 `id`、`名`、`年代`、`場域_anchor`、`初始狀態`、`煞氣`、`背景`、`執念`、`特例`、`限制`。
-- `schemas/anchor.schema.json`：`Anchor` 的 `id`、`地點`、`條件`、`服務靈`、`完成後`。
+- `schemas/npc.schema.json`：`NPC` 的 `id`、`稱呼`、`性格`、`避雷`、`轉折階段`、`可被說動的點`、`到場條件`、`習慣用語`。
+- `schemas/spirit.schema.json`：`Spirit` 的 `id`、`名稱`、`年代`、`場域_anchor`、`初始狀態`、`煞氣`、`背景`、`執念`、`特例`、`限制`。
+- `schemas/anchor.schema.json`：`Anchor` 的 `id`、`地點`、`條件`、`完成後`。
 - `schemas/map.schema.json`：`MapDef` 的 `id`、`image`。
-- `schemas/story.schema.json`：`StoryNode` 的 `id`、`anchor`、`steps`（`TEXT`、`CALL_GHOST_COMM`、`CALL_MEDIATION`、`GIVE_ITEM`、`UPDATE_FLAG`、`END`）。
+- `schemas/story.schema.json`：`StoryNode` 的 `id`、`anchor`、`service` 與各類 `steps` 類型（`TEXT`、`CALL_GHOST_COMM`、`CALL_MEDIATION`、`GIVE_ITEM`、`UPDATE_FLAG`、`END`）。

@@ -1,8 +1,9 @@
-import type { Anchor, Spirit, StoryNode, WorldStateData } from './Types';
+﻿import type { Anchor, Spirit, StoryNode, WorldStateData } from './Types';
+import { buildStoryServiceIndex, type StoryServiceEntry } from './StoryServices';
 import type { WorldState } from './WorldState';
 
 export type ParsedCondition = { kind: 'item' | 'flag'; key: string; expect?: any };
-export type DirectedAnchor = Anchor & { meta?: { resolved?: boolean } };
+export type DirectedAnchor = Anchor & { meta?: { resolved?: boolean; service?: StoryServiceEntry } };
 
 const DEFAULT_CONDITION: ParsedCondition = { kind: 'flag', key: '', expect: true };
 
@@ -57,18 +58,26 @@ function parseExpectedValue(value: string): any {
 export class SpawnDirector {
   private accessibleAnchors = new Map<string, DirectedAnchor>();
 
-  listAccessibleAnchors(world: WorldState | undefined, anchors: Anchor[], spirits: Spirit[]): DirectedAnchor[] {
+  listAccessibleAnchors(
+    world: WorldState | undefined,
+    anchors: Anchor[],
+    stories: StoryNode[],
+    spirits: Spirit[]
+  ): DirectedAnchor[] {
     const data = world?.data;
     this.accessibleAnchors.clear();
     if (!data) {
       return [];
     }
 
+    const serviceIndex = buildStoryServiceIndex(stories);
     const resolvedSpirits = new Set(data.已安息靈 ?? []);
     const result: DirectedAnchor[] = [];
 
     anchors.forEach((anchor) => {
-      const resolved = resolvedSpirits.has(anchor.服務靈);
+      const service = serviceIndex.byAnchor.get(anchor.id);
+      const serviceSpiritId = service?.spiritId;
+      const resolved = serviceSpiritId ? resolvedSpirits.has(serviceSpiritId) : false;
       const meetsConditions = (anchor.條件 ?? []).every((condition) =>
         this.evaluateCondition(data, condition)
       );
@@ -76,13 +85,19 @@ export class SpawnDirector {
         return;
       }
 
-      if (!spirits.some((spirit) => spirit.id === anchor.服務靈)) {
-        // 即便缺少靈體資料，仍保留錨點於清單中。
+      if (serviceSpiritId && !spirits.some((spirit) => spirit.id === serviceSpiritId)) {
+        // Anchor links to a spirit that is not loaded yet.
       }
 
-      const directedAnchor: DirectedAnchor = resolved
-        ? { ...anchor, meta: { resolved: true } }
-        : { ...anchor };
+      const meta: DirectedAnchor['meta'] | undefined =
+        resolved || service
+          ? {
+              ...(resolved ? { resolved: true } : {}),
+              ...(service ? { service } : {}),
+            }
+          : undefined;
+
+      const directedAnchor: DirectedAnchor = meta ? { ...anchor, meta } : { ...anchor };
 
       result.push(directedAnchor);
       this.accessibleAnchors.set(anchor.id, directedAnchor);

@@ -2,13 +2,15 @@
 import { ModuleScene, Router } from '@core/Router';
 import { DataRepo } from '@core/DataRepo';
 import { WorldState } from '@core/WorldState';
-import type { Anchor, MapDef } from '@core/Types';
+import type { Anchor, MapDef, StoryNode } from '@core/Types';
+import { buildStoryServiceIndex } from '@core/StoryServices';
 import MiasmaIndicator from '@ui/MiasmaIndicator';
 
 export default class ShellScene extends ModuleScene {
   private world?: WorldState;
   private router?: Router;
   private anchors: Anchor[] = [];
+  private anchorSpiritMap = new Map<string, string>();
   private maps = new Map<string, MapDef>();
   private lastLocation?: string;
   private currentMapId?: string;
@@ -159,17 +161,27 @@ export default class ShellScene extends ModuleScene {
   }
 
   private async prepareThumbnail(repo: DataRepo | undefined) {
+    this.anchorSpiritMap.clear();
+
     if (!repo) {
       await this.updateMapThumbnail(true);
       return;
     }
 
     try {
-      const [anchors, maps] = await Promise.all([
+      const [anchors, stories, maps] = await Promise.all([
         repo.get<Anchor[]>('anchors'),
+        repo.get<StoryNode[]>('stories'),
         repo.get<MapDef[]>('maps')
       ]);
       this.anchors = anchors;
+
+      const storyList = Array.isArray(stories) ? stories : [];
+      const serviceIndex = buildStoryServiceIndex(storyList);
+      serviceIndex.byAnchor.forEach((entry) => {
+        this.anchorSpiritMap.set(entry.anchorId, entry.spiritId);
+      });
+
       this.maps.clear();
       maps.forEach((map) => this.maps.set(map.id, map));
     } catch (error) {
@@ -339,7 +351,10 @@ export default class ShellScene extends ModuleScene {
   }
 
   private isAnchorResolved(anchor: Anchor): boolean {
-    const spiritId = anchor.服務靈;
+    const spiritId = this.anchorSpiritMap.get(anchor.id);
+    if (!spiritId) {
+      return false;
+    }
     const resolvedList = this.world?.data?.已安息靈 ?? [];
     return resolvedList.includes(spiritId);
   }
