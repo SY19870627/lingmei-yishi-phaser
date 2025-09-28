@@ -31,11 +31,15 @@ export default class OptionList<T = unknown> extends Phaser.Events.EventEmitter 
 
   private textObjects: Phaser.GameObjects.Text[] = [];
 
+  private highlightBoxes: (Phaser.GameObjects.Rectangle | null)[] = [];
+
   private selectedIndex = -1;
 
   private mode: Mode = 'message';
 
   private destroyed = false;
+
+  private readonly highlightColorNumber: number;
 
   constructor(scene: Phaser.Scene, x: number, y: number, config: OptionListConfig = {}) {
     super();
@@ -52,6 +56,8 @@ export default class OptionList<T = unknown> extends Phaser.Events.EventEmitter 
       messageColor: config.messageColor ?? '#ccc'
     };
     this.container = scene.add.container(x, y);
+
+    this.highlightColorNumber = Phaser.Display.Color.ValueToColor(this.config.highlightColor).color;
 
     scene.input.keyboard?.on('keydown-UP', this.handleCursorUp, this);
     scene.input.keyboard?.on('keydown-DOWN', this.handleCursorDown, this);
@@ -123,9 +129,12 @@ export default class OptionList<T = unknown> extends Phaser.Events.EventEmitter 
   private rebuildTexts(entries: { content: string; interactive: boolean }[], isMessage: boolean) {
     this.clearTexts();
     const spacing = isMessage ? Math.max(this.config.spacing * 0.7, 26) : this.config.spacing;
+    this.highlightBoxes = [];
     entries.forEach((entry, index) => {
       const text = this.createText(entry.content, index * spacing, isMessage);
       if (entry.interactive) {
+        const highlightBox = this.createHighlightBox(text);
+        this.highlightBoxes.push(highlightBox);
         text.setInteractive({ useHandCursor: true });
         text.on('pointerover', () => {
           this.setSelectedIndex(index);
@@ -134,6 +143,12 @@ export default class OptionList<T = unknown> extends Phaser.Events.EventEmitter 
           this.setSelectedIndex(index);
           this.confirmSelection();
         });
+        text.on('pointerout', () => {
+          this.updateSelection();
+        });
+      }
+      if (!entry.interactive) {
+        this.highlightBoxes.push(null);
       }
       this.textObjects.push(text);
     });
@@ -162,6 +177,10 @@ export default class OptionList<T = unknown> extends Phaser.Events.EventEmitter 
       text.destroy();
     });
     this.textObjects = [];
+    this.highlightBoxes.forEach((box) => {
+      box?.destroy();
+    });
+    this.highlightBoxes = [];
   }
 
   private getOriginX() {
@@ -213,17 +232,39 @@ export default class OptionList<T = unknown> extends Phaser.Events.EventEmitter 
         text.setStyle({ color: this.config.messageColor });
         text.setAlpha(1);
       });
+      this.highlightBoxes.forEach((box) => {
+        box?.setVisible(false);
+      });
       return;
     }
     this.textObjects.forEach((text, idx) => {
       if (idx === this.selectedIndex) {
         text.setStyle({ color: this.config.highlightColor });
         text.setAlpha(1);
+        this.highlightBoxes[idx]?.setVisible(true);
       } else {
         text.setStyle({ color: this.config.textColor });
         text.setAlpha(0.85);
+        this.highlightBoxes[idx]?.setVisible(false);
       }
     });
+  }
+
+  private createHighlightBox(text: Phaser.GameObjects.Text) {
+    const paddingX = 20;
+    const paddingY = 16;
+    const width = text.displayWidth + paddingX;
+    const height = text.displayHeight + paddingY;
+    const centerX = text.x + (0.5 - text.originX) * text.displayWidth;
+    const centerY = text.y + text.displayHeight / 2;
+    const box = this.scene.add.rectangle(centerX, centerY, width, height);
+    box.setOrigin(0.5, 0.5);
+    box.setFillStyle(0, 0);
+    box.setStrokeStyle(2, this.highlightColorNumber, 1);
+    box.setVisible(false);
+    this.container.add(box);
+    this.container.bringToTop(text);
+    return box;
   }
 
   private handleCursorUp() {
