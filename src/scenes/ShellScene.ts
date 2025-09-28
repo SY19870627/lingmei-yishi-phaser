@@ -92,5 +92,17 @@ export default class ShellScene extends ModuleScene {
     hintsButton.on('pointerup', () => {
       router.push('HintsScene');
     });
+
+    const settingsButton = this.add
+      .text(width / 2, height / 2 + 240, '設定', {
+        fontSize: '24px',
+        color: '#aaf'
+      })
+      .setOrigin(0.5)
+      .setInteractive({ useHandCursor: true });
+
+    settingsButton.on('pointerup', () => {
+      router.push('SettingsScene');
+    });
   }
 }

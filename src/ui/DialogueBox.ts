@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { MIN_TEXT_SPEED, type GameSettings } from '@core/Settings';
 
 export interface DialogueBoxConfig {
   width?: number;
@@ -22,7 +23,7 @@ export default class DialogueBox extends Phaser.Events.EventEmitter {
 
   private readonly padding: number;
 
-  private readonly typeSpeed: number;
+  private typeSpeed: number;
 
   private typingTimer?: Phaser.Time.TimerEvent;
 
@@ -36,13 +37,17 @@ export default class DialogueBox extends Phaser.Events.EventEmitter {
 
   private destroyed = false;
 
+  private settings?: GameSettings;
+  private handleSettingsSpeedChange?: (value: number) => void;
+
   constructor(scene: Phaser.Scene, x: number, y: number, config: DialogueBoxConfig = {}) {
     super();
     this.scene = scene;
     const width = config.width ?? 520;
     const height = config.height ?? 160;
     this.padding = config.padding ?? 16;
-    this.typeSpeed = config.typeSpeed ?? 18;
+    this.settings = scene.registry.get('settings') as GameSettings | undefined;
+    this.typeSpeed = config.typeSpeed ?? this.settings?.getTextSpeed() ?? 18;
 
     this.container = scene.add.container(x, y);
     this.container.setSize(width, height);
@@ -64,6 +69,13 @@ export default class DialogueBox extends Phaser.Events.EventEmitter {
     scene.input.keyboard?.on('keydown-SPACE', this.handleSkipKey, this);
     scene.events.once(Phaser.Scenes.Events.SHUTDOWN, this.destroy, this);
     scene.events.once(Phaser.Scenes.Events.DESTROY, this.destroy, this);
+
+    if (this.settings) {
+      this.handleSettingsSpeedChange = (value: number) => {
+        this.setTypeSpeed(value);
+      };
+      this.settings.on('change:textSpeed', this.handleSettingsSpeedChange);
+    }
   }
 
   setText(text: string) {
@@ -100,11 +112,26 @@ export default class DialogueBox extends Phaser.Events.EventEmitter {
     }
     this.destroyed = true;
     this.stopTyping();
+    if (this.settings && this.handleSettingsSpeedChange) {
+      this.settings.off('change:textSpeed', this.handleSettingsSpeedChange);
+      this.handleSettingsSpeedChange = undefined;
+    }
     this.scene.input.keyboard?.off('keydown-SPACE', this.handleSkipKey, this);
     this.scene.events.off(Phaser.Scenes.Events.SHUTDOWN, this.destroy, this);
     this.scene.events.off(Phaser.Scenes.Events.DESTROY, this.destroy, this);
     this.container.destroy(true);
     this.removeAllListeners();
+  }
+
+  setTypeSpeed(speed: number, restart = true) {
+    const clamped = Math.max(MIN_TEXT_SPEED, Math.round(speed));
+    if (clamped === this.typeSpeed) {
+      return;
+    }
+    this.typeSpeed = clamped;
+    if (!this.completed && restart) {
+      this.restartTyping();
+    }
   }
 
   private restartTyping() {
