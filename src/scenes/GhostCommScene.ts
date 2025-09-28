@@ -6,6 +6,9 @@ import type { Spirit, WordCard, GhostOption } from '@core/Types';
 import type { WorldState } from '@core/WorldState';
 import KnotTag from '@ui/KnotTag';
 import type { KnotState } from '@ui/KnotTag';
+import OptionList from '@ui/OptionList';
+import type { OptionListItem } from '@ui/OptionList';
+import MiasmaIndicator from '@ui/MiasmaIndicator';
 import { GhostDirector } from '@core/GhostDirector';
 
 interface GhostCommResult {
@@ -26,7 +29,9 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
 
   private statusText?: Phaser.GameObjects.Text;
   private optionContainer?: Phaser.GameObjects.Container;
+  private optionList?: OptionList<GhostOption>;
   private feedbackText?: Phaser.GameObjects.Text;
+  private miasmaIndicator?: MiasmaIndicator;
 
   private obsessionState = new Map<string, ObsessionState>();
   private knotTags = new Map<string, KnotTag>();
@@ -94,6 +99,14 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
       })
       .setOrigin(0, 0);
 
+    const indicatorX = width * 0.52;
+    this.miasmaIndicator = new MiasmaIndicator(this, indicatorX, 112, {
+      width: 220,
+      height: 130
+    });
+    const currentMiasma = this.world?.data.煞氣 ?? '清';
+    this.miasmaIndicator.setMiasma(currentMiasma);
+
     this.feedbackText = this.add
       .text(32, height - 96, '', {
         fontSize: '18px',
@@ -117,6 +130,9 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
     this.buildObsessionTags();
     this.buildWordCardList(width);
     this.buildOptionsPanel(width, height);
+
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.handleSceneShutdown, this);
+    this.events.once(Phaser.Scenes.Events.DESTROY, this.handleSceneShutdown, this);
   }
 
   private initializeObsessionState() {
@@ -211,15 +227,20 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
       .setOrigin(0.5, 0);
     this.optionContainer.add(title);
 
-    const hint = this.add
-      .text(panelWidth / 2, 48, '請選擇右側字卡', {
-        fontSize: '16px',
-        color: '#ccc',
-        wordWrap: { width: panelWidth - 24 }
-      })
-      .setOrigin(0.5, 0);
-    hint.setData('type', 'hint');
-    this.optionContainer.add(hint);
+    this.optionList = new OptionList<GhostOption>(this, panelWidth / 2, 72, {
+      width: panelWidth - 24,
+      wrapWidth: panelWidth - 32,
+      align: 'center',
+      fontSize: '18px'
+    });
+    this.optionList.on('confirm', (item: OptionListItem<GhostOption>) => {
+      const option = item.data;
+      if (option) {
+        this.applyOption(option);
+      }
+    });
+    this.optionContainer.add(this.optionList.container);
+    this.optionList.setMessage(['請選擇右側字卡']);
   }
 
   private async handleWordCardSelected(card: WordCard) {
@@ -256,81 +277,19 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
   }
 
   private populateOptions(entries: { card: WordCard; option: GhostOption }[]) {
-    if (!this.optionContainer) {
+    if (!this.optionList) {
       return;
     }
 
-    const panelWidth = (this.optionContainer.list[0] as Phaser.GameObjects.Rectangle).width;
-    const optionStartY = 48;
-    const optionSpacing = 48;
-
-    this.optionContainer.removeAll(true);
-
-    const panelBg = this.add
-      .rectangle(0, 0, panelWidth, this.scale.height - 220, 0x000000, 0.4)
-      .setOrigin(0, 0);
-    this.optionContainer.add(panelBg);
-
-    const title = this.add
-      .text(panelWidth / 2, 12, '溝通選項', {
-        fontSize: '20px',
-        color: '#fff'
-      })
-      .setOrigin(0.5, 0);
-    this.optionContainer.add(title);
-
-    entries.forEach(({ option }, idx) => {
-      const display = this.fitOptionText(String(option.text ?? '選項'), 40);
-      const optionText = this.add
-        .text(panelWidth / 2, optionStartY + idx * optionSpacing, display, {
-          fontSize: '18px',
-          color: '#aaf',
-          wordWrap: { width: panelWidth - 24 },
-          align: 'center'
-        })
-        .setOrigin(0.5, 0)
-        .setInteractive({ useHandCursor: true });
-
-      optionText.on('pointerup', () => {
-        this.applyOption(option);
-      });
-
-      this.optionContainer?.add(optionText);
-    });
+    const items = entries.map(({ option }) => ({
+      label: this.fitOptionText(String(option.text ?? '選項'), 40),
+      data: option
+    }));
+    this.optionList.setOptions(items);
   }
 
   private setOptionsText(lines: string[]) {
-    if (!this.optionContainer) {
-      return;
-    }
-
-    const panelWidth = (this.optionContainer.list[0] as Phaser.GameObjects.Rectangle).width;
-    this.optionContainer.removeAll(true);
-
-    const panelBg = this.add
-      .rectangle(0, 0, panelWidth, this.scale.height - 220, 0x000000, 0.4)
-      .setOrigin(0, 0);
-    this.optionContainer.add(panelBg);
-
-    const title = this.add
-      .text(panelWidth / 2, 12, '溝通選項', {
-        fontSize: '20px',
-        color: '#fff'
-      })
-      .setOrigin(0.5, 0);
-    this.optionContainer.add(title);
-
-    lines.forEach((line, idx) => {
-      const text = this.add
-        .text(panelWidth / 2, 60 + idx * 28, line, {
-          fontSize: '16px',
-          color: '#ccc',
-          wordWrap: { width: panelWidth - 24 },
-          align: 'center'
-        })
-        .setOrigin(0.5, 0);
-      this.optionContainer?.add(text);
-    });
+    this.optionList?.setMessage(lines);
   }
 
   private applyOption(option: GhostOption) {
@@ -399,6 +358,8 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
         return;
       }
     }
+
+    this.miasmaIndicator?.setMiasma(this.world.data.煞氣);
 
     const summaryParts: string[] = [];
     if (effect) {
@@ -587,5 +548,12 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
         return this.spirit?.執念.find((obs) => obs.id === id)?.名 ?? id;
       })
       .join('、');
+  }
+
+  private handleSceneShutdown() {
+    this.optionList?.destroy();
+    this.optionList = undefined;
+    this.miasmaIndicator?.destroy();
+    this.miasmaIndicator = undefined;
   }
 }
