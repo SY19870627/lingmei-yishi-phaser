@@ -1,5 +1,6 @@
 import { ModuleScene, Router } from '@core/Router';
 import { WorldState } from '@core/WorldState';
+import MiasmaIndicator from '@ui/MiasmaIndicator';
 
 export default class ShellScene extends ModuleScene {
   constructor() {
@@ -18,11 +19,18 @@ export default class ShellScene extends ModuleScene {
       })
       .setOrigin(0, 0);
 
+    const miasmaIndicator = new MiasmaIndicator(this, width - 140, 110, {
+      width: 240,
+      height: 140
+    });
+    miasmaIndicator.setMiasma(world?.data?.煞氣 ?? '清');
+
     const updateHud = () => {
       const location = world?.data?.位置 ?? '';
       const sha = world?.data?.煞氣 ?? '';
       const yin = world?.data?.陰德 ?? '';
       hudText.setText(`位置：${location}\n煞氣：${sha}\n陰德：${yin}`);
+      miasmaIndicator.setMiasma(world?.data?.煞氣 ?? '清');
     };
 
     updateHud();
@@ -83,6 +91,18 @@ export default class ShellScene extends ModuleScene {
 
     hintsButton.on('pointerup', () => {
       router.push('HintsScene');
+    });
+
+    const settingsButton = this.add
+      .text(width / 2, height / 2 + 240, '設定', {
+        fontSize: '24px',
+        color: '#aaf'
+      })
+      .setOrigin(0.5)
+      .setInteractive({ useHandCursor: true });
+
+    settingsButton.on('pointerup', () => {
+      router.push('SettingsScene');
     });
   }
 }

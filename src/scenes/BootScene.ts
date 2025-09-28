@@ -7,6 +7,7 @@ import { bus } from '@core/EventBus';
 import { LocalStorageSaver } from '@core/Saver';
 import AutoSave from '@core/AutoSave';
 import { DataValidator } from '@core/DataValidator';
+import { GameSettings } from '@core/Settings';
 
 export default class BootScene extends Phaser.Scene {
   constructor(){ super('BootScene'); }
@@ -42,14 +43,20 @@ export default class BootScene extends Phaser.Scene {
       return;
     }
 
+    const settings = new GameSettings();
+    await settings.load();
+
     const world  = new WorldState();
-    const aio    = new AiOrchestrator();
+    settings.applyWorldFlags(world);
+
+    const aio    = new AiOrchestrator(settings);
     const saver  = new LocalStorageSaver(world);
     AutoSave.install(bus, saver);
 
     this.game.registry.set('router', router);
     this.game.registry.set('repo', repo);
     this.game.registry.set('world', world);
+    this.game.registry.set('settings', settings);
     this.game.registry.set('aio', aio);
     this.game.registry.set('bus', bus);
     this.game.registry.set('saver', saver);

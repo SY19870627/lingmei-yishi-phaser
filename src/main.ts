@@ -9,6 +9,7 @@ import MediationScene from './scenes/MediationScene';
 import InventoryScene from './scenes/InventoryScene';
 import WordCardsScene from './scenes/WordCardsScene';
 import HintsScene from './scenes/HintsScene';
+import SettingsScene from './scenes/SettingsScene';
 import LoadScene from './scenes/LoadScene';
 
 const config: Phaser.Types.Core.GameConfig = {
@@ -20,6 +21,7 @@ const config: Phaser.Types.Core.GameConfig = {
     BootScene, TitleScene, ShellScene, MapScene,
     StoryScene, GhostCommScene, MediationScene,
     InventoryScene, WordCardsScene, HintsScene,
+    SettingsScene,
     LoadScene
   ]
 };
