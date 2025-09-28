@@ -19,10 +19,7 @@
       },
       "轉折階段": {
         "type": "array",
-        "items": {
-          "type": "string",
-          "enum": ["抗拒", "猶豫", "願試", "承諾"]
-        },
+        "items": { "type": "string" },
         "minItems": 1,
         "uniqueItems": true
       },
