@@ -1,4 +1,5 @@
-import Ajv, { type ErrorObject, type ValidateFunction } from 'ajv';
+import Ajv from 'ajv/dist/2020';
+import type { ErrorObject, ValidateFunction } from 'ajv';
 import addFormats from 'ajv-formats';
 import sacredItemSchema from '../../schemas/sacred-item.schema.json' assert { type: 'json' };
 import wordcardSchema from '../../schemas/wordcard.schema.json' assert { type: 'json' };

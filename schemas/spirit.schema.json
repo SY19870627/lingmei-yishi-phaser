@@ -11,8 +11,8 @@
       "名": { "type": "string" },
       "年代": { "type": "string" },
       "場域_anchor": { "type": "string" },
-      "初始狀態": { "type": "string", "enum": ["現身", "失我"] },
-      "煞氣": { "type": "string", "enum": ["清", "濁", "沸"] },
+      "初始狀態": { "type": "string" },
+      "煞氣": { "type": "string" },
       "背景": { "type": "string" },
       "執念": {
         "type": "array",
@@ -39,7 +39,7 @@
         "additionalProperties": false,
         "required": ["類型"],
         "properties": {
-          "類型": { "type": "string", "enum": ["失我靈", "拒談靈"] },
+          "類型": { "type": "string" },
           "關鍵物": { "type": "string" },
           "關鍵人物": { "type": "string" },
           "拒談觸發": { "type": "string" }
