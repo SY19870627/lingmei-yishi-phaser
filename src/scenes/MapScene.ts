@@ -3,7 +3,8 @@ import { ModuleScene, Router } from '@core/Router';
 import { DataRepo } from '@core/DataRepo';
 import { WorldState } from '@core/WorldState';
 import { SpawnDirector, type DirectedAnchor } from '@core/SpawnDirector';
-import type { Anchor, NPC, Spirit, StoryNode } from '@core/Types';
+import type { Anchor, MapDef, NPC, Spirit, StoryNode } from '@core/Types';
+import MapArt from '@ui/MapArt';
 import { GhostDirector } from '@core/GhostDirector';
 import HintsManager from '@core/HintsManager';
 
@@ -26,6 +27,7 @@ export default class MapScene extends ModuleScene {
   private director = new SpawnDirector();
   private accessibleAnchors: DirectedAnchor[] = [];
   private hintIndicator?: Phaser.GameObjects.Container;
+  private mapArt?: MapArt;
 
   constructor() {
     super('MapScene');
@@ -33,6 +35,8 @@ export default class MapScene extends ModuleScene {
 
   async create() {
     const { width, height } = this.scale;
+
+    this.mapArt = new MapArt(this);
 
     const repo = this.registry.get('repo') as DataRepo | undefined;
     this.world = this.registry.get('world') as WorldState | undefined;
@@ -106,16 +110,18 @@ export default class MapScene extends ModuleScene {
     }
 
     try {
-      const [anchors, stories, npcs, spirits] = await Promise.all([
+      const [anchors, stories, npcs, spirits, maps] = await Promise.all([
         repo.get<Anchor[]>('anchors'),
         repo.get<StoryNode[]>('stories'),
         repo.get<NPC[]>('npcs'),
-        repo.get<Spirit[]>('spirits')
+        repo.get<Spirit[]>('spirits'),
+        repo.get<MapDef[]>('maps')
       ]);
       this.anchors = anchors;
       this.stories = stories;
       this.spirits = spirits;
       this.buildCompanionNames(npcs, spirits);
+      this.mapArt?.setMaps(maps);
       this.refreshMapState();
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -319,6 +325,12 @@ export default class MapScene extends ModuleScene {
     this.renderLocationList(32, 168);
     this.renderStoryList();
     this.updateHintIndicator();
+    void this.mapArt?.show(this.getMapIdForLocation(this.currentLocation));
+  }
+
+  private getMapIdForLocation(location: string): string | undefined {
+    const anchor = this.anchors.find((item) => item.地點 === location);
+    return anchor?.mapId;
   }
 
   private updateStatusLabel() {
