@@ -1,5 +1,5 @@
 export type Miasma = "清"|"濁"|"沸";
-export interface SacredItem { id:string; 名:string; 來源:string; 用途:("安撫"|"請託"|"作證"|"喚醒")[]; 鉤子?:string; }
+export interface SacredItem { id:string; 名:string; 來源:string; 用途:("安撫"|"請託"|"作證"|"喚醒"|"儀式")[]; 鉤子?:string; }
 export interface WordCard { id:string; 字:string; 標籤:("安撫"|"提問"|"交換"|"儀式"|"指認")[]; 備註?:string; }
 export interface Obsession { id:string; 名:string; 條件:string[]; 狀態:"未解"|"鬆動"|"已解"; }
 export interface Spirit {

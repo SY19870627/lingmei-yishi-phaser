@@ -1,1 +1,18 @@
-{ "ui": { "save":"存檔", "map":"地圖", "inventory":"物品", "cards":"字卡", "hints":"提示" } }
+{
+  "ui": {
+    "save":"存檔",
+    "map":"地圖",
+    "inventory":"物品",
+    "cards":"字卡",
+    "hints":"提示",
+    "settings":"設定",
+    "back":"返回",
+    "confirm":"確定"
+  },
+  "hintTemplates": {
+    "needItem":"帶著「{item}」再來看看。",
+    "needPerson":"請「{npc}」到場，也許話就說得開。",
+    "goPlace":"去「{place}」找找看。",
+    "placeResolved":"「{place}」已送行。"
+  }
+}
