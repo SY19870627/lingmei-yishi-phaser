@@ -32,11 +32,19 @@ export default class ShellScene extends ModuleScene {
     super('ShellScene');
   }
 
+  preload() {
+    this.load.image('shell-background', 'images/title/base-title-screen-variant_02.png');
+  }
+
   create() {
     const { width, height } = this.scale;
     const world = (this.world = this.registry.get('world') as WorldState | undefined);
     this.router = this.registry.get('router') as Router | undefined;
     const repo = this.registry.get('repo') as DataRepo | undefined;
+
+    const background = this.add.image(width / 2, height / 2, 'shell-background');
+    const backgroundScale = Math.max(width / background.width, height / background.height);
+    background.setScale(backgroundScale);
 
     this.lastLocation = world?.data?.位置;
 
@@ -49,13 +57,13 @@ export default class ShellScene extends ModuleScene {
     });
 
     const hudText = this.add
-      .text(16, 16, '', {
+      .text(60, 16, '', {
         fontSize: '16px',
         color: '#fff'
       })
       .setOrigin(0, 0);
 
-    const miasmaIndicator = new MiasmaIndicator(this, width - 140, 110, {
+    const miasmaIndicator = new MiasmaIndicator(this, width - 180, 100, {
       width: 240,
       height: 140
     });
@@ -76,7 +84,7 @@ export default class ShellScene extends ModuleScene {
     const mapButton = this.add
       .text(width / 2, height / 2, '開啟地圖', {
         fontSize: '24px',
-        color: '#aaf'
+        color: '#621e1eff'
       })
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true });
@@ -88,7 +96,7 @@ export default class ShellScene extends ModuleScene {
     const inventoryButton = this.add
       .text(width / 2, height / 2 + 60, '物品', {
         fontSize: '24px',
-        color: '#aaf'
+        color: '#621e1eff'
       })
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true });
@@ -96,7 +104,7 @@ export default class ShellScene extends ModuleScene {
     const pickedLabel = this.add
       .text(16, height - 16, '選擇的物品：無', {
         fontSize: '16px',
-        color: '#fff'
+        color: '#621e1eff'
       })
       .setOrigin(0, 1);
 
@@ -111,7 +119,7 @@ export default class ShellScene extends ModuleScene {
     const wordCardsButton = this.add
       .text(width / 2, height / 2 + 120, '字卡', {
         fontSize: '24px',
-        color: '#aaf'
+        color: '#621e1eff'
       })
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true });
@@ -123,7 +131,7 @@ export default class ShellScene extends ModuleScene {
     const hintsButton = this.add
       .text(width / 2, height / 2 + 180, '提示', {
         fontSize: '24px',
-        color: '#aaf'
+        color: '#621e1eff'
       })
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true });
@@ -135,7 +143,7 @@ export default class ShellScene extends ModuleScene {
     const settingsButton = this.add
       .text(width / 2, height / 2 + 240, '設定', {
         fontSize: '24px',
-        color: '#aaf'
+        color: '#621e1eff'
       })
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true });
