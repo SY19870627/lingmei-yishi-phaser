@@ -1,4 +1,4 @@
-import Phaser from 'phaser';
+﻿import Phaser from 'phaser';
 
 export interface BgmPlayOptions {
   volume?: number;
@@ -227,7 +227,15 @@ export class AudioBus {
   private applyChannelVolume(channel: ChannelBinding): void {
     const groupVolume = channel.group === 'bgm' ? this.bgmVolume : this.sfxVolume;
     const effective = channel.baseVolume * groupVolume * this.masterVolume;
-    channel.sound.setVolume(effective);
+    const sound = channel.sound as Phaser.Sound.BaseSound & {
+      setVolume?: (value: number) => Phaser.Sound.BaseSound;
+      volume?: number;
+    };
+    if (typeof sound.setVolume === 'function') {
+      sound.setVolume(effective);
+    } else if (typeof sound.volume === 'number') {
+      sound.volume = effective;
+    }
   }
 
   private getEffectiveVolume(channel: ChannelBinding): number {

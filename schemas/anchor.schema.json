@@ -5,22 +5,42 @@
   "items": {
     "type": "object",
     "additionalProperties": false,
-    "required": ["id", "地點", "條件", "服務靈"],
+    "required": [
+      "id",
+      "地點",
+      "條件",
+      "mapId",
+      "服務靈"
+    ],
     "properties": {
-      "id": { "type": "string" },
-      "地點": { "type": "string" },
+      "id": {
+        "type": "string"
+      },
+      "地點": {
+        "type": "string"
+      },
       "條件": {
         "type": "array",
-        "items": { "type": "string" }
+        "items": {
+          "type": "string"
+        }
       },
-      "mapId": { "type": "string" },
-      "服務靈": { "type": "string" },
+      "mapId": {
+        "type": "string"
+      },
+      "服務靈": {
+        "type": "string"
+      },
       "完成後": {
         "type": "object",
         "additionalProperties": false,
         "properties": {
-          "裝飾": { "type": "string" },
-          "回聲腳本": { "type": "string" }
+          "裝飾": {
+            "type": "string"
+          },
+          "回聲腳本": {
+            "type": "string"
+          }
         }
       }
     }

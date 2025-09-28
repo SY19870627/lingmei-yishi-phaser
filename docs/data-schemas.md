@@ -54,6 +54,12 @@
 | `服務靈` | `string` | 對應的靈體 id。 |
 | `完成後` | `{ 裝飾?:string; 回聲腳本?:string; }?` | 劇情完成時的場景變化。 |
 
+## MapDef
+| 欄位 | 型別 | 說明 |
+| --- | --- | --- |
+| `id` | `string` | 地圖定義 id。 |
+| `image` | `string` | 地圖縮略圖資源路徑。 |
+
 ## NPC
 | 欄位 | 型別 | 說明 |
 | --- | --- | --- |
@@ -102,4 +108,5 @@
 - `schemas/npc.schema.json`：`NPC` 的 `id`、`稱呼`、`性格`、`避雷`、`轉折階段`、`可被說動的點`、`到場條件`。
 - `schemas/spirit.schema.json`：`Spirit` 的 `id`、`名`、`年代`、`場域_anchor`、`初始狀態`、`煞氣`、`背景`、`執念`、`特例`、`限制`。
 - `schemas/anchor.schema.json`：`Anchor` 的 `id`、`地點`、`條件`、`服務靈`、`完成後`。
+- `schemas/map.schema.json`：`MapDef` 的 `id`、`image`。
 - `schemas/story.schema.json`：`StoryNode` 的 `id`、`anchor`、`steps`（`TEXT`、`CALL_GHOST_COMM`、`CALL_MEDIATION`、`GIVE_ITEM`、`UPDATE_FLAG`、`END`）。

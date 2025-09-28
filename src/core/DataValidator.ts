@@ -7,6 +7,7 @@ import npcSchema from '../../schemas/npc.schema.json' assert { type: 'json' };
 import spiritSchema from '../../schemas/spirit.schema.json' assert { type: 'json' };
 import anchorSchema from '../../schemas/anchor.schema.json' assert { type: 'json' };
 import storySchema from '../../schemas/story.schema.json' assert { type: 'json' };
+import mapSchema from '../../schemas/map.schema.json' assert { type: 'json' };
 
 type SchemaName =
   | 'sacred-item'
@@ -14,7 +15,8 @@ type SchemaName =
   | 'npc'
   | 'spirit'
   | 'anchor'
-  | 'story';
+  | 'story'
+  | 'map';
 
 const SCHEMAS: Record<SchemaName, unknown> = {
   'sacred-item': sacredItemSchema,
@@ -23,6 +25,7 @@ const SCHEMAS: Record<SchemaName, unknown> = {
   'spirit': spiritSchema,
   'anchor': anchorSchema,
   'story': storySchema,
+  'map': mapSchema,
 };
 
 export class DataValidator {
