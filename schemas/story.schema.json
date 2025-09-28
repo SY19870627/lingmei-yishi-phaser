@@ -19,7 +19,7 @@
               "required": ["t", "who", "text"],
               "properties": {
                 "t": { "const": "TEXT" },
-                "who": { "type": "string", "enum": ["旁白", "亡魂", "NPC", "玩家"] },
+                "who": { "type": "string" },
                 "text": { "type": "string" },
                 "updates": {
                   "type": "array",
@@ -51,7 +51,8 @@
               "required": ["t", "itemId"],
               "properties": {
                 "t": { "const": "GIVE_ITEM" },
-                "itemId": { "type": "string" }
+                "itemId": { "type": "string" },
+                "message": { "type": "string" }
               }
             },
             {
