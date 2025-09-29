@@ -36,7 +36,7 @@
    - `anchor`：指向觸發劇情的 Anchor `id`。
     - `steps`：依序列出劇情步驟，類型需符合 `schemas/story.schema.json` 的定義：
      - `service`：記錄該劇情對應的亡魂（`spiritId`）與觸發行數（`triggerLine`，從 1 開始計算）。若觸發點是一個 `CHOICE` 選項，請將 `triggerLine` 指向該 `CHOICE` 的 `lineId` 所在行序。
-     - `TEXT`：一般敘事，需含 `who`（說話者）與 `text`（內容），並必填唯一的 `lineId` 方便跳轉與服務定位，可選 `updates` 記錄旗標變化描述。
+     - `TEXT`：一般敘事，需含 `who`（說話者）與 `text`（內容），並必填唯一的 `lineId` 方便跳轉與服務定位，可選 `updates` 記錄旗標變化描述，或設定 `display` 為 `"CENTER"` 讓文字顯示於畫面中央。
       - `SCREEN_EFFECT`：呼叫畫面特效，例如淡入淡出或震動。需提供 `effectId`（對應 `StoryScene` 內註冊的效果）、可選的 `duration`（秒）與 `color`（覆蓋顏色，如 `#000000`），並建議附上 `lineId` 方便追蹤。
       - `CALL_GHOST_COMM`：啟動亡魂交談，需提供 `spiritId`。
       - `CALL_MEDIATION`：呼叫凡人協調，需提供 `npcId`。

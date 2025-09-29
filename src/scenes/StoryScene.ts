@@ -7,7 +7,13 @@ import { GhostDirector } from '@core/GhostDirector';
 import type { Spirit } from '@core/Types';
 
 type StoryBaseStep = { lineId?: string };
-type StoryTextStep = StoryBaseStep & { t: 'TEXT'; who?: string; text: string };
+type StoryTextDisplayMode = 'AUTO' | 'CENTER';
+type StoryTextStep = StoryBaseStep & {
+  t: 'TEXT';
+  who?: string;
+  text: string;
+  display?: StoryTextDisplayMode;
+};
 type StoryGiveItemStep = StoryBaseStep & { t: 'GIVE_ITEM'; itemId: string; message?: string };
 type StoryUpdateFlagStep = StoryBaseStep & { t: 'UPDATE_FLAG'; flag: string; value: unknown };
 type StoryScreenEffectStep =
@@ -68,6 +74,7 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
   private dialogueContainer!: Phaser.GameObjects.Container;
   private dialogueText!: Phaser.GameObjects.Text;
   private speakerNameText!: Phaser.GameObjects.Text;
+  private centerTextBox!: Phaser.GameObjects.Text;
   private dialogueBoxSize = { width: 0, height: 0 };
   private activeTextObject?: Phaser.GameObjects.Text;
   private choiceTexts: Phaser.GameObjects.Text[] = [];
@@ -104,6 +111,16 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
         wordWrap: { width: width - 120 }
       })
       .setOrigin(0.5);
+
+    this.centerTextBox = this.add
+      .text(width / 2, height / 2, '', {
+        ...zhBase,
+        fontSize: '28px',
+        align: 'center',
+        wordWrap: { width: width - 160 }
+      })
+      .setOrigin(0.5)
+      .setVisible(false);
 
     this.promptText = this.add
       .text(width / 2, height / 2 + 60, '點擊繼續', {
@@ -232,6 +249,9 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
     if (this.dialogueText) {
       this.dialogueText.setText('');
     }
+    if (this.centerTextBox) {
+      this.centerTextBox.setText('').setVisible(false);
+    }
     if (this.textBox) {
       this.textBox.setVisible(true);
     }
@@ -316,6 +336,11 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
     this.promptText.setText('點擊繼續').setVisible(false);
     this.awaitingInput = false;
 
+    if (this.getTextDisplayMode(step) === 'CENTER') {
+      this.showCenterText(step.text ?? '');
+      return;
+    }
+
     if (speaker) {
       this.showDialogueText(speaker, step.text ?? '');
       return;
@@ -327,6 +352,7 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
   private showNarrationText(text: string) {
     this.textBox.setVisible(true);
     this.dialogueContainer.setVisible(false);
+    this.centerTextBox.setVisible(false);
     this.activeTextObject = this.textBox;
     this.textBox.setText('');
     this.promptText.setPosition(this.scale.width / 2, this.scale.height / 2 + 60);
@@ -336,6 +362,7 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
   private showDialogueText(speaker: string, text: string) {
     this.textBox.setVisible(false);
     this.dialogueContainer.setVisible(true);
+    this.centerTextBox.setVisible(false);
     this.speakerNameText.setText(speaker);
     this.dialogueText.setText('');
     this.activeTextObject = this.dialogueText;
@@ -344,6 +371,26 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
       this.dialogueContainer.y + this.dialogueBoxSize.height / 2 + 28
     );
     this.startTypewriter(text, this.dialogueText);
+  }
+
+  private showCenterText(text: string) {
+    this.textBox.setVisible(false);
+    this.dialogueContainer.setVisible(false);
+    this.centerTextBox.setVisible(true);
+    this.centerTextBox.setText('');
+    this.activeTextObject = this.centerTextBox;
+    this.promptText.setPosition(this.scale.width / 2, this.scale.height / 2 + 80);
+    this.startTypewriter(text, this.centerTextBox);
+  }
+
+  private getTextDisplayMode(step: StoryTextStep): StoryTextDisplayMode {
+    if (typeof step.display === 'string') {
+      const normalized = step.display.trim().toUpperCase();
+      if (normalized === 'CENTER') {
+        return 'CENTER';
+      }
+    }
+    return 'AUTO';
   }
 
   private handleGiveItem(step: StoryGiveItemStep) {
@@ -850,6 +897,7 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
   private showErrorAndExit(message: string) {
     this.textBox.setVisible(true);
     this.dialogueContainer.setVisible(false);
+    this.centerTextBox.setVisible(false);
     this.activeTextObject = this.textBox;
     this.textBox.setText(message);
     this.promptText.setText('點擊返回').setVisible(true);
