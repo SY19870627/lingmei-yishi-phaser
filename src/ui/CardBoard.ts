@@ -24,6 +24,8 @@ export interface CardBoardItem<T = unknown> {
   title: string;
   description?: string;
   tags?: string[];
+  tagLabel?: string;
+  descriptionLabel?: string;
   data: T;
   disabled?: boolean;
 }
@@ -94,10 +96,10 @@ export default class CardBoard<T = unknown> extends Phaser.Events.EventEmitter {
     this.container = scene.add.container(x, y);
 
     const boardWidth = this.config.cardWidth * 3 + this.config.cardSpacing * 2;
-    const boardHeight = this.config.cardHeight + 40;
+    const boardHeight = this.config.cardHeight + 32;
 
     this.background = scene.add
-      .rectangle(0, 0, boardWidth + 80, boardHeight + 40, this.config.boardBackgroundColor, this.config.boardBackgroundAlpha)
+      .rectangle(0, 0, boardWidth + 72, boardHeight + 36, this.config.boardBackgroundColor, this.config.boardBackgroundAlpha)
       .setOrigin(0.5, 0.5);
 
     this.container.add(this.background);
@@ -256,7 +258,7 @@ export default class CardBoard<T = unknown> extends Phaser.Events.EventEmitter {
       })
       .setOrigin(0.5, 0);
 
-    const tagTop = titleTop + 44;
+    const tagTop = titleTop + 40;
     const tag = this.scene.add
       .text(0, tagTop, '', {
         fontSize: tagFontSize,
@@ -267,8 +269,8 @@ export default class CardBoard<T = unknown> extends Phaser.Events.EventEmitter {
       .setOrigin(0.5, 0)
       .setVisible(false);
 
-    const descriptionBaseY = -cardHeight / 2 + 86;
-    const descriptionWithTagY = tagTop + 36;
+    const descriptionBaseY = -cardHeight / 2 + 82;
+    const descriptionWithTagY = tagTop + 32;
 
     const description = this.scene.add
       .text(0, descriptionBaseY, '', {
@@ -368,10 +370,11 @@ export default class CardBoard<T = unknown> extends Phaser.Events.EventEmitter {
       }
 
       slot.title.setText(item.title);
-      slot.description.setText(item.description ?? '');
       const tags = Array.isArray(item.tags) ? item.tags.filter((tag) => Boolean(tag)) : [];
       if (tags.length) {
-        slot.tag.setText(tags.join(' / '));
+        const joinedTags = tags.join('、');
+        const prefix = item.tagLabel ?? '';
+        slot.tag.setText(prefix ? `${prefix}${joinedTags}` : joinedTags);
         slot.tag.setVisible(true);
         slot.description.setY(slot.descriptionWithTagY);
       } else {
@@ -379,6 +382,10 @@ export default class CardBoard<T = unknown> extends Phaser.Events.EventEmitter {
         slot.tag.setVisible(false);
         slot.description.setY(slot.descriptionBaseY);
       }
+      const descriptionText = item.description ?? '';
+      slot.description.setText(
+        descriptionText ? (item.descriptionLabel ? `${item.descriptionLabel}${descriptionText}` : descriptionText) : ''
+      );
       slot.container.setData('item', item);
       slot.container.setData('disabled', Boolean(item.disabled));
       slot.container.setVisible(true);

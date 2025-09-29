@@ -149,8 +149,8 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
 
     this.cardBoard = new CardBoard<CardChoiceData>(this, width / 2, dialogueTop - 120, {
       cardWidth: 220,
-      cardHeight: 168,
-      cardSpacing: 54,
+      cardHeight: 148,
+      cardSpacing: 52,
       titleFontSize: '30px',
       tagFontSize: '20px',
       descriptionFontSize: '18px'
@@ -359,6 +359,8 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
         title: card.字 ?? card.id ?? `卡牌 ${index + 1}`,
         description: notes,
         tags,
+        tagLabel: '標籤：',
+        descriptionLabel: '備註：',
         data: { kind: 'wordcard', card }
       };
     });
