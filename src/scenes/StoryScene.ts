@@ -101,18 +101,7 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
   async create() {
     const { width, height } = this.scale;
     
-    // 重置相機狀態，避免上一個場景的淡出效果殘留
-      // 完整重置相機狀態
-    const camera = this.cameras.main;
-    if (camera) {
-      camera.resetFX(); // 清除所有特效
-      camera.setAlpha(1); // 確保不透明
-      camera.clearAlpha(); // 清除 alpha 設定
-      // 如果相機處於 fade out 狀態，強制 fade in
-      if (camera.alpha < 1) {
-        camera.fadeIn(0, 0, 0, 0); // 立即淡入（duration=0）
-      }
-    }
+    this.resetCameraState();
     
     this.resetStoryState();
 
@@ -921,31 +910,44 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
     this.input.once('pointerup', handler);
   }
 
-private finishStory() {
-  if (this.finished) {
-    return;
-  }
-  this.finished = true;
-  this.clearChoices();
-  this.cancelTypewriter();
-  this.screenEffectInProgress = false;
-  this.clearScreenEffectTimer();
-  
-  // ✅ 新增：清理相機狀態
-  const camera = this.cameras.main;
-  if (camera) {
+  private resetCameraState() {
+    const camera = this.cameras.main;
+    if (!camera) {
+      return;
+    }
+
     camera.resetFX();
     camera.setAlpha(1);
     camera.clearAlpha();
-  }
-  
-  if (this.storyLoaded && this.storyId && this.world) {
-    const flagKey = `story:${this.storyId}`;
-    this.world.setFlag(flagKey, true);
-    this.flagsUpdated.add(flagKey);
+
+    // 若上一個劇情留下 fade out 狀態，強制立即淡入回正常畫面
+    if (camera.fadeEffect?.isRunning) {
+      camera.fadeEffect.reset();
+    }
+    if (camera.alpha < 1) {
+      camera.fadeIn(0, 0, 0, 0);
+    }
   }
 
-  this.bus?.emit('autosave');
-  this.done({ flagsUpdated: Array.from(this.flagsUpdated) });
-}
+  private finishStory() {
+    if (this.finished) {
+      return;
+    }
+    this.finished = true;
+    this.clearChoices();
+    this.cancelTypewriter();
+    this.screenEffectInProgress = false;
+    this.clearScreenEffectTimer();
+
+    this.resetCameraState();
+
+    if (this.storyLoaded && this.storyId && this.world) {
+      const flagKey = `story:${this.storyId}`;
+      this.world.setFlag(flagKey, true);
+      this.flagsUpdated.add(flagKey);
+    }
+
+    this.bus?.emit('autosave');
+    this.done({ flagsUpdated: Array.from(this.flagsUpdated) });
+  }
 }
