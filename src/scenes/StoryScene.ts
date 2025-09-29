@@ -233,7 +233,11 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
     this.spiritCache.clear();
     this.pendingLineJump = undefined;
     if (this.choiceTexts.length) {
-      this.choiceTexts.forEach((text) => text.destroy());
+      this.choiceTexts.forEach((text) => {
+        if (this.isGameObjectActive(text)) {
+          text.destroy();
+        }
+      });
     }
     this.choiceTexts = [];
     this.lineIndexById.clear();
@@ -242,20 +246,24 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
     this.typewriterIndex = 0;
     this.screenEffectInProgress = false;
     this.clearScreenEffectTimer();
-    if (this.dialogueContainer) {
+    if (this.isGameObjectActive(this.dialogueContainer)) {
       this.dialogueContainer.setVisible(false);
     }
-    if (this.speakerNameText) {
+    if (this.isGameObjectActive(this.speakerNameText)) {
       this.speakerNameText.setText('');
     }
-    if (this.dialogueText) {
+    if (this.isGameObjectActive(this.dialogueText)) {
       this.dialogueText.setText('');
     }
-    if (this.centerTextBox) {
-      this.centerTextBox.setText('').setVisible(false);
+    if (this.isGameObjectActive(this.centerTextBox)) {
+      this.centerTextBox.setText('');
+      this.centerTextBox.setVisible(false);
     }
-    if (this.textBox) {
+    if (this.isGameObjectActive(this.textBox)) {
       this.textBox.setVisible(true);
+    }
+    if (this.isGameObjectActive(this.promptText)) {
+      this.promptText.setVisible(false);
     }
   }
 
@@ -949,5 +957,11 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
 
     this.bus?.emit('autosave');
     this.done({ flagsUpdated: Array.from(this.flagsUpdated) });
+  }
+
+  private isGameObjectActive<T extends Phaser.GameObjects.GameObject>(
+    gameObject: T | undefined
+  ): gameObject is T {
+    return !!gameObject && !!gameObject.scene;
   }
 }
