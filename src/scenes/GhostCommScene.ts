@@ -623,6 +623,7 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
 
     this.updateMiasmaText();
 
+    const optionText = String(option.text ?? '').trim();
     const summaryParts: string[] = [];
     if (effect) {
       summaryParts.push(`效果：${effect}`);
@@ -631,7 +632,17 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
       summaryParts.push(`影響執念：${this.describeTargets(option.targets)}`);
     }
     const summary = summaryParts.length ? summaryParts.join('\n') : '她靜靜地看著你。';
-    this.dialogueBox?.setText(summary);
+    const dialogueLines: string[] = [];
+    if (optionText) {
+      dialogueLines.push(optionText);
+    }
+    if (summary) {
+      if (dialogueLines.length) {
+        dialogueLines.push('');
+      }
+      dialogueLines.push(summary);
+    }
+    this.dialogueBox?.setText(dialogueLines.join('\n'));
     this.showWordCardChoices(false);
   }
 
