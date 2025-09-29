@@ -1,0 +1,378 @@
+{
+  "intro_sequence": {
+    "acts": [
+      {
+        "id": "act1_dream",
+        "title": "夢中的奶奶",
+        "scenes": [
+          {
+            "type": "dialogue",
+            "speaker": "奶奶",
+            "text": "惠玲啊，奶奶給妳做個好東西。",
+            "emotion": "慈祥"
+          },
+          {
+            "type": "dialogue",
+            "speaker": "小惠玲",
+            "text": "奶奶，這是什麼？",
+            "emotion": "好奇"
+          },
+          {
+            "type": "action",
+            "action": "show_item",
+            "item": "紅色香包",
+            "description": "奶奶拿出紅色小碎花香包"
+          },
+          {
+            "type": "dialogue",
+            "speaker": "奶奶",
+            "text": "這是奶奶去媽祖廟求來的平安符，縫在這個香包裡面。妳要隨身帶著，媽祖婆會保佑妳平安的。",
+            "emotion": "慈愛"
+          },
+          {
+            "type": "dialogue",
+            "speaker": "小惠玲",
+            "text": "真的嗎？那奶奶也會一直保佑我嗎？",
+            "emotion": "期待"
+          },
+          {
+            "type": "dialogue",
+            "speaker": "奶奶",
+            "text": "傻孩子，奶奶會永遠在妳身邊的...永遠...",
+            "emotion": "溫柔",
+            "effect": "voice_fade"
+          }
+        ]
+      },
+      {
+        "id": "act2_reality",
+        "title": "殘酷的現實",
+        "scenes": [
+          {
+            "type": "narration",
+            "text": "民國15年（1926年）秋，破舊的小屋內"
+          },
+          {
+            "type": "sound",
+            "sound": "child_crying",
+            "volume": 0.3
+          },
+          {
+            "type": "narration",
+            "text": "6歲的蔡惠玲蜷縮在床角，臉上有淡淡的灰塵，左眼的青色胎記在昏暗光線中若隱若現。她緊握著那個紅色小花香包。"
+          },
+          {
+            "type": "dialogue",
+            "speaker": "惠玲",
+            "text": "奶奶...奶奶妳在哪裡...",
+            "emotion": "哭泣"
+          },
+          {
+            "type": "offscreen_voice",
+            "speaker": "村民甲",
+            "text": "那個查某囡仔...左眼生得那樣奇怪..."
+          },
+          {
+            "type": "offscreen_voice",
+            "speaker": "村民乙",
+            "text": "聽說她阿嬤過世後，她就開始說看得到奇怪的東西..."
+          },
+          {
+            "type": "offscreen_voice",
+            "speaker": "村民甲",
+            "text": "嬰仔郎有耳無嘴啦！不要亂講話！"
+          }
+        ]
+      },
+      {
+        "id": "act3_first_contact",
+        "title": "第一次接觸",
+        "scenes": [
+          {
+            "type": "scene_transition",
+            "to": "小巷子",
+            "time": "黃昏"
+          },
+          {
+            "type": "offscreen_voice",
+            "speaker": "小孩甲",
+            "text": "欸！菜花！菜花來了！"
+          },
+          {
+            "type": "offscreen_voice",
+            "speaker": "小孩乙",
+            "text": "菜花！妳的眼睛怎麼那麼奇怪？"
+          },
+          {
+            "type": "offscreen_voice",
+            "speaker": "小孩甲",
+            "text": "我阿母說妳是不祥的...會帶來壞運氣！"
+          },
+          {
+            "type": "action",
+            "action": "ghost_appears",
+            "description": "一個穿著破舊軍服的年輕男子的半透明身影出現"
+          },
+          {
+            "type": "sound",
+            "sound": "ghost_whisper",
+            "volume": 0.4
+          },
+          {
+            "type": "dialogue",
+            "speaker": "惠玲",
+            "text": "阿...阿伯？",
+            "emotion": "驚訝"
+          },
+          {
+            "type": "dialogue",
+            "speaker": "鬼魂",
+            "text": "小姑娘...妳看得到我？",
+            "emotion": "驚訝"
+          },
+          {
+            "type": "offscreen_voice",
+            "speaker": "小孩甲",
+            "text": "她...她在跟誰講話？"
+          },
+          {
+            "type": "offscreen_voice",
+            "speaker": "小孩乙",
+            "text": "好可怕...我們快走！"
+          },
+          {
+            "type": "action",
+            "action": "children_flee",
+            "description": "孩子們嚇得四散奔逃"
+          },
+          {
+            "type": "dialogue",
+            "speaker": "惠玲",
+            "text": "你...你是誰？",
+            "emotion": "害怕但好奇"
+          },
+          {
+            "type": "dialogue",
+            "speaker": "鬼魂",
+            "text": "我...我已經死了很久了...但是我找不到回家的路...",
+            "emotion": "迷茫"
+          },
+          {
+            "type": "dialogue",
+            "speaker": "惠玲",
+            "text": "你...你需要幫助嗎？",
+            "emotion": "勇敢"
+          }
+        ]
+      },
+      {
+        "id": "act4_destiny",
+        "title": "命運的開始",
+        "scenes": [
+          {
+            "type": "narration",
+            "text": "惠玲緊握著香包，左眼的胎記散發著微弱的藍光"
+          },
+          {
+            "type": "dialogue",
+            "speaker": "惠玲",
+            "text": "奶奶...如果妳真的還在保佑我...請告訴我該怎麼做...",
+            "emotion": "祈求"
+          },
+          {
+            "type": "action",
+            "action": "sachet_glows",
+            "description": "香包散發出淡淡的溫暖"
+          },
+          {
+            "type": "system_message",
+            "text": "天語卡牌：「溫柔對話」已出現"
+          },
+          {
+            "type": "dialogue",
+            "speaker": "惠玲",
+            "text": "這是...什麼？",
+            "emotion": "驚奇"
+          },
+          {
+            "type": "system_message",
+            "text": "使用天語卡牌與亡靈溝通。選擇「溫柔對話」來安撫這位迷失的靈魂。"
+          },
+          {
+            "type": "dialogue",
+            "speaker": "鬼魂",
+            "text": "小姑娘...妳真的願意幫助我嗎？",
+            "emotion": "希望"
+          }
+        ]
+      },
+      {
+        "id": "act5_choice",
+        "title": "新的開始",
+        "scenes": [
+          {
+            "type": "player_choice",
+            "prompt": "選擇你的回應",
+            "options": [
+              {
+                "id": "gentle",
+                "text": "使用「溫柔對話」：「我想幫助你找到回家的路」",
+                "result": "best_ending"
+              },
+              {
+                "id": "fear",
+                "text": "害怕退縮：「我...我很害怕...」",
+                "result": "neutral_ending"
+              },
+              {
+                "id": "ask",
+                "text": "詢問詳情：「你為什麼會迷路？」",
+                "result": "info_ending"
+              }
+            ]
+          }
+        ],
+        "endings": {
+          "best_ending": [
+            {
+              "type": "dialogue",
+              "speaker": "惠玲",
+              "text": "我想幫助你找到回家的路。"
+            },
+            {
+              "type": "narration",
+              "text": "卡牌發出溫和的光芒，鬼魂的表情變得平靜"
+            },
+            {
+              "type": "dialogue",
+              "speaker": "鬼魂",
+              "text": "謝謝妳...小姑娘...我感受到了妳的善意..."
+            },
+            {
+              "type": "narration",
+              "text": "鬼魂的身影開始變得透明"
+            },
+            {
+              "type": "dialogue",
+              "speaker": "鬼魂",
+              "text": "我想起來了...我的家...我的家人...我可以回去了..."
+            },
+            {
+              "type": "action",
+              "action": "ghost_disappears",
+              "description": "鬼魂化作點點光芒消散"
+            },
+            {
+              "type": "dialogue",
+              "speaker": "惠玲",
+              "text": "我...我真的幫到他了..."
+            },
+            {
+              "type": "offscreen_voice",
+              "speaker": "奶奶的聲音",
+              "text": "惠玲...妳做得很好...這就是妳的使命..."
+            },
+            {
+              "type": "dialogue",
+              "speaker": "惠玲",
+              "text": "奶奶...我明白了...",
+              "emotion": "流淚但微笑"
+            },
+            {
+              "type": "reward",
+              "karma": "中",
+              "description": "陰德提升"
+            }
+          ],
+          "neutral_ending": [
+            {
+              "type": "dialogue",
+              "speaker": "惠玲",
+              "text": "我...我很害怕..."
+            },
+            {
+              "type": "dialogue",
+              "speaker": "鬼魂",
+              "text": "沒關係的，孩子...我理解..."
+            },
+            {
+              "type": "narration",
+              "text": "鬼魂緩緩消失在夜色中"
+            }
+          ],
+          "info_ending": [
+            {
+              "type": "dialogue",
+              "speaker": "惠玲",
+              "text": "你為什麼會迷路？"
+            },
+            {
+              "type": "dialogue",
+              "speaker": "鬼魂",
+              "text": "戰爭...戰爭讓我忘記了回家的路..."
+            },
+            {
+              "type": "narration",
+              "text": "鬼魂的身影漸漸模糊"
+            }
+          ]
+        }
+      },
+      {
+        "id": "act6_title",
+        "title": "標題畫面",
+        "scenes": [
+          {
+            "type": "narration",
+            "text": "惠玲站在夕陽下，左眼的胎記閃爍著微光，紅色香包在胸前輕擺，她的表情從害怕轉為堅定"
+          },
+          {
+            "type": "narration",
+            "text": "在這個動蕩不安的年代，戰爭帶來了無數的死亡與怨念..."
+          },
+          {
+            "type": "narration",
+            "text": "而有一個小女孩，背負著被人恐懼的天賦..."
+          },
+          {
+            "type": "narration",
+            "text": "她將用她的「天語」，為迷失的靈魂指引歸途..."
+          },
+          {
+            "type": "title_display",
+            "title": "天語",
+            "subtitle": "HEAVENLY WORDS",
+            "tagline": "一個關於溝通、理解與救贖的故事"
+          }
+        ]
+      }
+    ]
+  },
+  "characters": {
+    "惠玲": {
+      "age": 6,
+      "description": "左眼有青色胎記的小女孩",
+      "ability": "能看見並與亡靈溝通"
+    },
+    "奶奶": {
+      "description": "惠玲已故的祖母",
+      "role": "精神導師"
+    },
+    "鬼魂": {
+      "name": "無名士兵",
+      "description": "戰爭中死去的年輕士兵",
+      "need": "找到回家的路"
+    }
+  },
+  "items": {
+    "紅色香包": {
+      "description": "奶奶親手縫製，內有媽祖廟求來的平安符",
+      "effect": "保護惠玲，引導天語卡牌出現"
+    }
+  },
+  "initial_cards": [
+    "w_wait",
+    "w_listen", 
+    "w_help"
+  ]
+}
