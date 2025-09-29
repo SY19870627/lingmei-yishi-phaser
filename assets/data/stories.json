@@ -1,87 +1,156 @@
 [
   {
-    "id":"story_beads_intro",
-    "anchor":"anchor_old_dock_depot",
-    "steps":[
-      {"t":"TEXT","who":"旁白","text":"碼頭邊風鹹，王嬸看見你，摸出一串舊佛珠。","lineId":"beads_intro_01"},
-      {"t":"TEXT","who":"NPC","text":"「孩子，這串珠子跟著我唸了好多年，借你用，用在該用的地方。」","lineId":"beads_intro_02"},
-      {"t":"GIVE_ITEM","itemId":"it_wang_beads","lineId":"beads_intro_give"},
-      {"t":"TEXT","who":"NPC","text":"「祖厝那盞燈也該點了。」","lineId":"beads_intro_03"},
-      {"t":"UPDATE_FLAG","flag":"zu_cuo_lamp_lit","value":true,"lineId":"beads_intro_flag"},
-      {"t":"END","lineId":"beads_intro_end"}
+    "id": "story_beads_intro",
+    "anchor": "anchor_old_dock_depot",
+    "steps": [
+      {"t": "TEXT", "who": "旁白", "text": "碼頭邊海風帶著鹽味,王嬸看見你走近,緩緩從懷中摸出一串磨得發亮的舊佛珠。", "lineId": "beads_intro_01"},
+      {"t": "TEXT", "who": "王嬸", "text": "「孩子,這串珠子跟著我唸了好多年經,今日借你用,記得用在該用的地方。」", "lineId": "beads_intro_02"},
+      {"t": "GIVE_ITEM", "itemId": "it_wang_beads", "message": "獲得了王嬸的佛珠", "lineId": "beads_intro_give"},
+      {"t": "TEXT", "who": "王嬸", "text": "「祖厝那盞蓮花燈也該點了,那孩子等了太久。」", "lineId": "beads_intro_03"},
+      {"t": "UPDATE_FLAG", "flag": "zu_cuo_lamp_lit", "value": true, "lineId": "beads_intro_flag"},
+      {"t": "TEXT", "who": "旁白", "text": "王嬸轉身離去,佛珠在你掌心散發著溫暖。", "lineId": "beads_intro_04"},
+      {"t": "END", "lineId": "beads_intro_end"}
     ]
   },
   {
-    "id":"story_wang_01",
-    "anchor":"anchor_zu_cuo_hall",
-    "steps":[
-      {"t":"TEXT","who":"旁白","text":"廳堂微潮，蓮花燈穩穩亮著。","lineId":"wang_01_01"},
-      {"t":"TEXT","who":"亡魂","text":"「她不吃塑膠做的飯。」","lineId":"wang_01_02"},
-      {"t":"CALL_GHOST_COMM","spiritId":"spirit_wang_ayi","lineId":"wang_01_call"},
-      {"t":"TEXT","who":"旁白","text":"你記下她愛的菜式，王嬸的佛珠在掌心發熱。","lineId":"wang_01_03"},
-      {"t":"CALL_MEDIATION","npcId":"npc_wang_shushu","lineId":"wang_01_mediation"},
-      {"t":"TEXT","who":"旁白","text":"若王叔叔點頭承諾，你幫忙擺上一碗熱飯。","lineId":"wang_01_04"},
-      {"t":"GIVE_ITEM","itemId":"it_hot_rice","lineId":"wang_01_item"},
-      {"t":"UPDATE_FLAG","flag":"擺上熱飯","value":true,"lineId":"wang_01_flag_meal"},
-      {"t":"TEXT","who":"亡魂","text":"「香味到了，她就知道。」","lineId":"wang_01_05"},
-      {"t":"UPDATE_FLAG","flag":"已安息:spirit_wang_ayi","value":true,"lineId":"wang_01_flag_rest"},
-      {"t":"END","lineId":"wang_01_end"}
+    "id": "story_wang_01",
+    "anchor": "anchor_zu_cuo_hall",
+    "steps": [
+      {"t": "TEXT", "who": "旁白", "text": "廳堂內空氣微潮,蓮花燈在佛龕前穩穩亮著,投下搖曳的光影。", "lineId": "wang_01_01"},
+      {"t": "SCREEN_EFFECT", "effectId": "fade_in", "color": "#f4e4bc", "duration": 0.8, "lineId": "fx_wang_warm_light"},
+      {"t": "TEXT", "who": "亡魂", "text": "「她不吃塑膠做的飯...那些冷冰冰的祭品,她怎麼會喜歡?」", "lineId": "wang_01_02"},
+      {"t": "CALL_GHOST_COMM", "spiritId": "spirit_wang_ayi", "lineId": "wang_01_call"},
+      {"t": "TEXT", "who": "旁白", "text": "你仔細記下她愛的菜式——紅燒肉、蒸蛋、還有那碗熱騰騰的白米飯。王嬸的佛珠在掌心微微發熱。", "lineId": "wang_01_03"},
+      {"t": "CHOICE", "lineId": "wang_01_choice", "options": [
+        {"action": "CALL_MEDIATION", "text": "找王叔叔商量準備熱食", "npcId": "npc_wang_shushu", "nextLineId": "wang_01_mediation_success"},
+        {"action": "GOTO_LINE", "text": "先了解更多王阿姨生前的喜好", "targetLineId": "wang_01_more_info"}
+      ]},
+      {"t": "TEXT", "who": "旁白", "text": "你向王阿姨詢問更多細節,她的眼中閃過溫暖的回憶。", "lineId": "wang_01_more_info"},
+      {"t": "TEXT", "who": "亡魂", "text": "「要用大火炒的青菜,還有...還有那個老砂鍋煮的粥。」", "lineId": "wang_01_more_detail"},
+      {"t": "CALL_MEDIATION", "npcId": "npc_wang_shushu", "lineId": "wang_01_mediation"},
+      {"t": "TEXT", "who": "旁白", "text": "王叔叔聽完你的轉述,默默點了點頭。你幫忙在供桌上擺上一碗冒著熱氣的白米飯。", "lineId": "wang_01_mediation_success"},
+      {"t": "GIVE_ITEM", "itemId": "it_hot_rice", "message": "供奉了熱騰騰的米飯", "lineId": "wang_01_item"},
+      {"t": "UPDATE_FLAG", "flag": "擺上熱飯", "value": true, "lineId": "wang_01_flag_meal"},
+      {"t": "TEXT", "who": "亡魂", "text": "「香味到了...她就知道有人還記得她愛吃什麼。」", "lineId": "wang_01_05"},
+      {"t": "SCREEN_EFFECT", "effectId": "fade_out", "duration": 1.5, "lineId": "fx_wang_peaceful"},
+      {"t": "UPDATE_FLAG", "flag": "已安息:spirit_wang_ayi", "value": true, "lineId": "wang_01_flag_rest"},
+      {"t": "END", "lineId": "wang_01_end"}
     ],
     "service": {
       "spiritId": "spirit_wang_ayi",
-      "triggerLine": 3
+      "triggerLine": 4
     }
   },
   {
-    "id":"story_dock_01",
-    "anchor":"anchor_old_dock_depot",
-    "steps":[
-      {"t":"TEXT","who":"旁白","text":"倉房內潮紙翻飛，一名年輕人影站在窗邊。","lineId":"dock_01_intro"},
-      {"t":"CHOICE","lineId":"dock_01_choice","options":[
-        {"action":"CALL_GHOST_COMM","text":"舉起佛珠直接呼喚那名士兵","spiritId":"spirit_dock_soldier","nextLineId":"dock_01_followup"},
-        {"action":"GOTO_LINE","text":"先翻找倉房裡的線索","targetLineId":"dock_01_search"},
-        {"action":"END","text":"暫時離開倉房"}
+    "id": "story_dock_01",
+    "anchor": "anchor_old_dock_depot",
+    "steps": [
+      {"t": "SCREEN_EFFECT", "effectId": "shake", "duration": 0.3, "lineId": "fx_dock_wind"},
+      {"t": "TEXT", "who": "旁白", "text": "倉房內潮濕的紙張被風吹得翻飛,一名身穿軍服的年輕人影佇立在破窗邊,望向遠方的海。", "lineId": "dock_01_intro"},
+      {"t": "TEXT", "who": "旁白", "text": "他的軍服已經褪色,但軍姿依然筆挺。", "lineId": "dock_01_detail"},
+      {"t": "CHOICE", "lineId": "dock_01_choice", "options": [
+        {"action": "CALL_GHOST_COMM", "text": "舉起佛珠,輕聲呼喚那名士兵", "spiritId": "spirit_dock_soldier", "nextLineId": "dock_01_direct_talk"},
+        {"action": "GOTO_LINE", "text": "先翻找倉房裡可能的線索", "targetLineId": "dock_01_search"},
+        {"action": "GOTO_LINE", "text": "靜靜觀察他的神態", "targetLineId": "dock_01_observe"}
       ]},
-      {"t":"TEXT","who":"旁白","text":"你在夾層找出一頁名冊。","lineId":"dock_01_search"},
-      {"t":"GIVE_ITEM","itemId":"it_old_roster_page","lineId":"dock_01_item"},
-      {"t":"CHOICE","lineId":"dock_01_followup","options":[
-        {"action":"CALL_GHOST_COMM","text":"帶著名冊再次喚他開口","spiritId":"spirit_dock_soldier","nextLineId":"dock_01_mediation"},
-        {"action":"GOTO_LINE","text":"請文書幫忙安排後事","targetLineId":"dock_01_mediation"},
-        {"action":"GOTO_LINE","text":"再回頭翻找倉房","targetLineId":"dock_01_search"},
-        {"action":"END","text":"先收起名冊"}
+      {"t": "TEXT", "who": "旁白", "text": "你仔細觀察這名士兵,發現他時而回頭張望,似乎在等待什麼。", "lineId": "dock_01_observe"},
+      {"t": "TEXT", "who": "旁白", "text": "他的手不時撫摸胸前的口袋,那裡似乎藏著什麼重要的東西。", "lineId": "dock_01_observe_detail"},
+      {"t": "CHOICE", "lineId": "dock_01_observe_next", "options": [
+        {"action": "GOTO_LINE", "text": "翻找倉房尋找線索", "targetLineId": "dock_01_search"},
+        {"action": "CALL_GHOST_COMM", "text": "直接與他對話", "spiritId": "spirit_dock_soldier", "nextLineId": "dock_01_direct_talk"}
       ]},
-      {"t":"CALL_MEDIATION","npcId":"npc_dock_clerk","lineId":"dock_01_mediation"},
-      {"t":"TEXT","who":"亡魂","text":"「名字回來了，路也就回來了。」","lineId":"dock_01_result"},
-      {"t":"UPDATE_FLAG","flag":"已安息:spirit_dock_soldier","value":true,"lineId":"dock_01_flag"},
-      {"t":"END","lineId":"dock_01_end"}
+      {"t": "TEXT", "who": "旁白", "text": "你在木箱的夾層中找出一頁泛黃的名冊,上面記錄著當年駐防士兵的姓名。", "lineId": "dock_01_search"},
+      {"t": "GIVE_ITEM", "itemId": "it_old_roster_page", "message": "找到了舊軍籍名冊", "lineId": "dock_01_item"},
+      {"t": "TEXT", "who": "旁白", "text": "名冊上有幾個名字已經模糊不清,但你隱約能辨認出幾個字。", "lineId": "dock_01_search_detail"},
+      {"t": "CHOICE", "lineId": "dock_01_followup", "options": [
+        {"action": "CALL_GHOST_COMM", "text": "帶著名冊試著與他對話", "spiritId": "spirit_dock_soldier", "nextLineId": "dock_01_talk_with_roster"},
+        {"action": "CALL_MEDIATION", "text": "先請文書幫忙查證名冊", "npcId": "npc_dock_clerk", "nextLineId": "dock_01_clerk_help"},
+        {"action": "GOTO_LINE", "text": "繼續搜索其他線索", "targetLineId": "dock_01_more_search"}
+      ]},
+      {"t": "TEXT", "who": "旁白", "text": "你繼續翻找,在角落發現了一封未寄出的家書。", "lineId": "dock_01_more_search"},
+      {"t": "GIVE_ITEM", "itemId": "it_unsent_letter", "message": "找到了未寄出的家書", "lineId": "dock_01_letter"},
+      {"t": "CHOICE", "lineId": "dock_01_after_letter", "options": [
+        {"action": "CALL_GHOST_COMM", "text": "帶著家書與名冊找他對話", "spiritId": "spirit_dock_soldier", "nextLineId": "dock_01_talk_with_roster"},
+        {"action": "CALL_MEDIATION", "text": "請文書協助處理這些文件", "npcId": "npc_dock_clerk", "nextLineId": "dock_01_clerk_help"}
+      ]},
+      {"t": "TEXT", "who": "旁白", "text": "你舉起佛珠,感受到一股溫暖的力量。", "lineId": "dock_01_direct_talk"},
+      {"t": "CALL_GHOST_COMM", "spiritId": "spirit_dock_soldier", "lineId": "dock_01_direct_call"},
+      {"t": "TEXT", "who": "旁白", "text": "對話結束後,你決定尋求文書的協助。", "lineId": "dock_01_direct_next"},
+      {"t": "CALL_MEDIATION", "npcId": "npc_dock_clerk", "lineId": "dock_01_direct_mediation"},
+      {"t": "TEXT", "who": "旁白", "text": "士兵看著名冊,眼中閃過一絲認知的光芒。", "lineId": "dock_01_talk_with_roster"},
+      {"t": "CALL_GHOST_COMM", "spiritId": "spirit_dock_soldier", "lineId": "dock_01_roster_call"},
+      {"t": "CALL_MEDIATION", "npcId": "npc_dock_clerk", "lineId": "dock_01_roster_mediation"},
+      {"t": "TEXT", "who": "旁白", "text": "文書仔細查看名冊,神情變得嚴肅。", "lineId": "dock_01_clerk_help"},
+      {"t": "CALL_MEDIATION", "npcId": "npc_dock_clerk", "lineId": "dock_01_mediation"},
+      {"t": "TEXT", "who": "旁白", "text": "文書承諾會為這名無名士兵補辦相關手續,讓他的名字重新回到記錄中。", "lineId": "dock_01_clerk_promise"},
+      {"t": "TEXT", "who": "亡魂", "text": "「名字回來了...回家的路也就回來了。謝謝你。」", "lineId": "dock_01_resolution"},
+      {"t": "SCREEN_EFFECT", "effectId": "fade_out", "color": "#e8f4f8", "duration": 2.0, "lineId": "fx_dock_peaceful"},
+      {"t": "UPDATE_FLAG", "flag": "已安息:spirit_dock_soldier", "value": true, "lineId": "dock_01_flag"},
+      {"t": "END", "lineId": "dock_01_end"}
     ],
     "service": {
       "spiritId": "spirit_dock_soldier",
-      "triggerLine": 2
+      "triggerLine": 4
     }
   },
   {
-    "id":"story_get_camphor",
-    "anchor":"anchor_old_dock_depot",
-    "steps":[
-      {"t":"TEXT","who":"NPC","text":"阿桃指著你手上的佛珠笑：「王嬸的？那你忙正事。」","lineId":"camphor_01"},
-      {"t":"TEXT","who":"NPC","text":"她從籃子裡掏出一片檜木屑。","lineId":"camphor_02"},
-      {"t":"GIVE_ITEM","itemId":"it_camphor_chip","lineId":"camphor_item"},
-      {"t":"TEXT","who":"NPC","text":"「坑木香一到，有些人就記起該記的。」","lineId":"camphor_03"},
-      {"t":"END","lineId":"camphor_end"}
+    "id": "story_get_camphor",
+    "anchor": "anchor_old_dock_depot",
+    "steps": [
+      {"t": "TEXT", "who": "阿桃", "text": "阿桃看見你手上的佛珠,露出會心的笑容:「王嬸的珠子?那你是在忙正事。」", "lineId": "camphor_01"},
+      {"t": "TEXT", "who": "阿桃", "text": "她從竹籃子裡小心翼翼地掏出一片散發淡香的檜木屑。", "lineId": "camphor_02"},
+      {"t": "GIVE_ITEM", "itemId": "it_camphor_chip", "message": "獲得了檜木香片", "lineId": "camphor_item"},
+      {"t": "TEXT", "who": "阿桃", "text": "「坑木香一到鼻子裡,有些人就會記起該記起的事。特別是那些在坑裡待過的。」", "lineId": "camphor_03"},
+      {"t": "TEXT", "who": "阿桃", "text": "「去吧,他們等太久了。」", "lineId": "camphor_04"},
+      {"t": "END", "lineId": "camphor_end"}
     ]
   },
   {
-    "id":"story_mine_01",
-    "anchor":"anchor_mine_entrance",
-    "steps":[
-      {"t":"TEXT","who":"旁白","text":"坑口陰涼，檜木香像舊記憶一樣慢慢浮起。","lineId":"mine_01_01"},
-      {"t":"CALL_GHOST_COMM","spiritId":"spirit_mine_ajin","lineId":"mine_01_call"},
-      {"t":"TEXT","who":"旁白","text":"你把名冊頁夾好，把要說的話寫在心裡。","lineId":"mine_01_02"},
-      {"t":"CALL_MEDIATION","npcId":"npc_miner_foreman","lineId":"mine_01_mediation"},
-      {"t":"TEXT","who":"亡魂","text":"「娘會認得我。」","lineId":"mine_01_03"},
-      {"t":"UPDATE_FLAG","flag":"已安息:spirit_mine_ajin","value":true,"lineId":"mine_01_flag"},
-      {"t":"END","lineId":"mine_01_end"}
+    "id": "story_mine_01",
+    "anchor": "anchor_mine_entrance",
+    "steps": [
+      {"t": "SCREEN_EFFECT", "effectId": "fade_in", "color": "#2d3e2d", "duration": 1.2, "lineId": "fx_mine_atmosphere"},
+      {"t": "TEXT", "who": "旁白", "text": "坑口陰涼深邃,檜木香在空氣中緩緩散開,像沉睡已久的記憶慢慢甦醒。", "lineId": "mine_01_01"},
+      {"t": "TEXT", "who": "旁白", "text": "一個瘦小的身影在坑口徘徊,衣衫襤褸,雙手沾滿了永遠洗不掉的煤塵。", "lineId": "mine_01_detail"},
+      {"t": "CHOICE", "lineId": "mine_01_choice", "options": [
+        {"action": "CALL_GHOST_COMM", "text": "直接呼喚那個少年", "spiritId": "spirit_mine_ajin", "nextLineId": "mine_01_direct"},
+        {"action": "GOTO_LINE", "text": "先讓檜木香發揮作用", "targetLineId": "mine_01_camphor_first"}
+      ]},
+      {"t": "TEXT", "who": "旁白", "text": "你將檜木片輕輕搓揉,讓香味更加濃郁。少年阿金突然停下腳步,深深吸了一口氣。", "lineId": "mine_01_camphor_first"},
+      {"t": "TEXT", "who": "亡魂", "text": "「這個味道...是家裡的味道。」", "lineId": "mine_01_camphor_reaction"},
+      {"t": "CALL_GHOST_COMM", "spiritId": "spirit_mine_ajin", "lineId": "mine_01_call"},
+      {"t": "TEXT", "who": "旁白", "text": "你將阿金的話語和願望都仔細記在心裡,還有那張名冊頁也小心收好。", "lineId": "mine_01_02"},
+      {"t": "CHOICE", "lineId": "mine_01_mediation_choice", "options": [
+        {"action": "CALL_MEDIATION", "text": "請工頭協助聯繫阿金的家人", "npcId": "npc_miner_foreman", "nextLineId": "mine_01_foreman"},
+        {"action": "GOTO_LINE", "text": "先了解更多阿金的情況", "targetLineId": "mine_01_more_talk"}
+      ]},
+      {"t": "TEXT", "who": "旁白", "text": "你再次與阿金交談,了解他對家的思念。", "lineId": "mine_01_more_talk"},
+      {"t": "TEXT", "who": "亡魂", "text": "「娘一定在等我回家吃飯...我還沒告訴她我有多想她。」", "lineId": "mine_01_family_talk"},
+      {"t": "CALL_MEDIATION", "npcId": "npc_miner_foreman", "lineId": "mine_01_mediation"},
+      {"t": "TEXT", "who": "旁白", "text": "工頭承諾會想辦法聯繫阿金的家人,讓他們知道他的消息。", "lineId": "mine_01_foreman"},
+      {"t": "TEXT", "who": "亡魂", "text": "「這樣...娘就會認得我了。謝謝你,讓我能回家。」", "lineId": "mine_01_03"},
+      {"t": "SCREEN_EFFECT", "effectId": "fade_out", "duration": 1.8, "lineId": "fx_mine_peaceful"},
+      {"t": "UPDATE_FLAG", "flag": "已安息:spirit_mine_ajin", "value": true, "lineId": "mine_01_flag"},
+      {"t": "TEXT", "who": "旁白", "text": "阿金的身影漸漸淡去,坑口又恢復了平靜。", "lineId": "mine_01_outro"},
+      {"t": "END", "lineId": "mine_01_end"}
+    ],
+    "service": {
+      "spiritId": "spirit_mine_ajin",
+      "triggerLine": 7
+    }
+  },
+  {
+    "id": "story_mine_01_direct",
+    "anchor": "anchor_mine_entrance",
+    "steps": [
+      {"t": "TEXT", "who": "旁白", "text": "你直接舉起佛珠,呼喚眼前的少年。", "lineId": "mine_direct_01"},
+      {"t": "CALL_GHOST_COMM", "spiritId": "spirit_mine_ajin", "lineId": "mine_direct_call"},
+      {"t": "TEXT", "who": "旁白", "text": "你將阿金的話語記在心裡,決定尋求工頭的協助。", "lineId": "mine_direct_02"},
+      {"t": "CALL_MEDIATION", "npcId": "npc_miner_foreman", "lineId": "mine_direct_mediation"},
+      {"t": "TEXT", "who": "亡魂", "text": "「娘會認得我了...謝謝你。」", "lineId": "mine_direct_03"},
+      {"t": "SCREEN_EFFECT", "effectId": "fade_out", "duration": 1.8, "lineId": "fx_mine_direct_peaceful"},
+      {"t": "UPDATE_FLAG", "flag": "已安息:spirit_mine_ajin", "value": true, "lineId": "mine_direct_flag"},
+      {"t": "END", "lineId": "mine_direct_end"}
     ],
     "service": {
       "spiritId": "spirit_mine_ajin",

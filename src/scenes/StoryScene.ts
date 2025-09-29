@@ -100,7 +100,14 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
 
   async create() {
     const { width, height } = this.scale;
-
+    
+    // 重置相機狀態，避免上一個場景的淡出效果殘留
+    const camera = this.cameras.main;
+    if (camera) {
+      camera.setAlpha(1);
+      camera.resetFX();
+    }
+    
     this.resetStoryState();
 
     this.textBox = this.add
