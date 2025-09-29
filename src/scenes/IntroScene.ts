@@ -10,6 +10,13 @@ const zhBase = {
   color: '#fff'
 } as const;
 
+const CHARACTER_HEIGHT_RATIOS = {
+  grandma: 0.7,
+  youngHuiling: 0.525,
+  sachet: 0.44,
+  ghostSoldier: 0.65
+} as const;
+
 export default class IntroScene extends ModuleScene<void, { completed: boolean }> {
   private world?: WorldState;
   private router?: Router;
@@ -125,13 +132,15 @@ export default class IntroScene extends ModuleScene<void, { completed: boolean }
     this.sound.play('dream-music', { volume: 0.5, loop: true });
     
     // 顯示奶奶和小惠玲
-    const grandma = this.add.image(width * 0.3, height * 0.6, 'grandma')
-      .setScale(0.8)
-      .setAlpha(0);
+    const grandma = this.fitImageToHeight(
+      this.add.image(width * 0.3, height * 0.6, 'grandma'),
+      CHARACTER_HEIGHT_RATIOS.grandma
+    ).setAlpha(0);
     
-    const youngHuiling = this.add.image(width * 0.5, height * 0.65, 'young-huiling')
-      .setScale(0.6)
-      .setAlpha(0);
+    const youngHuiling = this.fitImageToHeight(
+      this.add.image(width * 0.5, height * 0.65, 'young-huiling'),
+      CHARACTER_HEIGHT_RATIOS.youngHuiling
+    ).setAlpha(0);
     
     await Promise.all([
       this.fadeIn(grandma, 1000),
@@ -143,9 +152,10 @@ export default class IntroScene extends ModuleScene<void, { completed: boolean }
     await this.showDialogue('小惠玲', '奶奶，這是什麼？');
     
     // 顯示香包
-    const sachet = this.add.image(width * 0.4, height * 0.5, 'sachet')
-      .setScale(0.5)
-      .setAlpha(0);
+    const sachet = this.fitImageToHeight(
+      this.add.image(width * 0.4, height * 0.5, 'sachet'),
+      CHARACTER_HEIGHT_RATIOS.sachet
+    ).setAlpha(0);
     
     await this.fadeIn(sachet, 500);
     
@@ -197,7 +207,10 @@ export default class IntroScene extends ModuleScene<void, { completed: boolean }
     await this.showOffscreenVoice('小孩乙', '菜花！妳的眼睛怎麼那麼奇怪？');
     
     // 鬼魂出現
-    const ghost = this.add.image(width * 0.7, height * 0.5, 'ghost-soldier')
+    const ghost = this.fitImageToHeight(
+      this.add.image(width * 0.7, height * 0.5, 'ghost-soldier'),
+      CHARACTER_HEIGHT_RATIOS.ghostSoldier
+    )
       .setAlpha(0.5)
       .setTint(0x8888ff);
     
@@ -505,6 +518,18 @@ export default class IntroScene extends ModuleScene<void, { completed: boolean }
         clickHint.destroy();
       });
     });
+  }
+
+
+  private fitImageToHeight<T extends Phaser.GameObjects.Image>(image: T, heightRatio: number): T {
+    const targetHeight = this.scale.height * heightRatio;
+    if (!image.height || targetHeight <= 0) {
+      return image;
+    }
+
+    const scale = targetHeight / image.height;
+    image.setScale(scale);
+    return image;
   }
 
   private skipIntro() {
