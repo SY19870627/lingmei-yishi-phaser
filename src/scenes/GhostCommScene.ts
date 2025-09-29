@@ -2,12 +2,13 @@ import Phaser from 'phaser';
 import { ModuleScene } from '@core/Router';
 import type { DataRepo } from '@core/DataRepo';
 import type { AiOrchestrator } from '@core/AiOrchestrator';
-import type { Spirit, WordCard, GhostOption } from '@core/Types';
+import type { Spirit, WordCard, GhostOption, Miasma } from '@core/Types';
 import type { WorldState } from '@core/WorldState';
 import KnotTag from '@ui/KnotTag';
 import type { KnotState } from '@ui/KnotTag';
-import OptionList from '@ui/OptionList';
-import type { OptionListItem } from '@ui/OptionList';
+import OptionCarousel from '@ui/OptionCarousel';
+import type { OptionCarouselItem } from '@ui/OptionCarousel';
+import DialogueBox from '@ui/DialogueBox';
 import MiasmaIndicator from '@ui/MiasmaIndicator';
 import { GhostDirector } from '@core/GhostDirector';
 
@@ -28,9 +29,8 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
   private wordCards: WordCard[] = [];
 
   private statusText?: Phaser.GameObjects.Text;
-  private optionContainer?: Phaser.GameObjects.Container;
-  private optionList?: OptionList<GhostOption>;
-  private feedbackText?: Phaser.GameObjects.Text;
+  private optionCarousel?: OptionCarousel<GhostOption>;
+  private dialogueBox?: DialogueBox;
   private miasmaIndicator?: MiasmaIndicator;
 
   private obsessionState = new Map<string, ObsessionState>();
@@ -89,9 +89,8 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
     this.spirit = undefined;
     this.wordCards = [];
     this.statusText = undefined;
-    this.optionContainer = undefined;
-    this.optionList = undefined;
-    this.feedbackText = undefined;
+    this.optionCarousel = undefined;
+    this.dialogueBox = undefined;
     this.miasmaIndicator = undefined;
     this.obsessionState.clear();
     this.knotTags.clear();
@@ -108,44 +107,63 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
   private buildLayout() {
     const { width, height } = this.scale;
 
+    const headerWidth = Math.min(420, width * 0.42);
+    const headerHeight = 138;
     this.add
-      .text(32, 32, `與 ${this.spirit?.名 ?? '未知靈體'} 溝通`, {
-        fontSize: '26px',
-        color: '#fff'
+      .rectangle(32, 32, headerWidth, headerHeight, 0x000000, 0.55)
+      .setOrigin(0, 0)
+      .setStrokeStyle(2, 0x8a7a56, 0.8);
+
+    this.add
+      .text(48, 48, this.spirit?.名 ?? '未知亡魂', {
+        fontSize: '30px',
+        color: '#fef2d8'
+      })
+      .setOrigin(0, 0);
+
+    this.add
+      .text(48, 92, `煞氣指數：${this.describeMiasmaLevel()}`, {
+        fontSize: '20px',
+        color: '#fef2d8'
       })
       .setOrigin(0, 0);
 
     this.statusText = this.add
-      .text(32, 96, this.getStatusSummary(), {
+      .text(48, 128, this.getStatusSummary(), {
         fontSize: '18px',
-        color: '#fff',
+        color: '#f5e7c2',
         lineSpacing: 6,
-        wordWrap: { width: width * 0.5 }
+        wordWrap: { width: headerWidth - 32 }
       })
       .setOrigin(0, 0);
 
-    const indicatorX = width * 0.52;
-    this.miasmaIndicator = new MiasmaIndicator(this, indicatorX, 112, {
+    this.miasmaIndicator = new MiasmaIndicator(this, width - 160, 120, {
       width: 220,
-      height: 130
+      height: 130,
+      label: '煞氣流動',
+      valueFontSize: '30px'
     });
     const currentMiasma = this.world?.data.煞氣 ?? '清';
     this.miasmaIndicator.setMiasma(currentMiasma);
 
-    this.feedbackText = this.add
-      .text(32, height - 96, '', {
-        fontSize: '18px',
-        color: '#aaf',
-        wordWrap: { width: width * 0.5 }
-      })
-      .setOrigin(0, 0);
+    const dialogueWidth = Math.min(width - 96, 760);
+    const dialogueX = (width - dialogueWidth) / 2;
+    const dialogueY = height - 220;
+    this.dialogueBox = new DialogueBox(this, dialogueX, dialogueY, {
+      width: dialogueWidth,
+      height: 180,
+      backgroundAlpha: 0.6,
+      fontSize: '22px',
+      textColor: '#fff4d8'
+    });
+    this.dialogueBox.setText('請選擇字卡並提出合適的請求或回應。');
 
     const endButton = this.add
-      .text(width / 2, height - 32, '結束溝通', {
+      .text(width - 48, height - 24, '結束溝通', {
         fontSize: '22px',
-        color: '#aaf'
+        color: '#f3d69c'
       })
-      .setOrigin(0.5, 1)
+      .setOrigin(1, 1)
       .setInteractive({ useHandCursor: true });
 
     endButton.on('pointerup', () => {
@@ -201,13 +219,19 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
   }
 
   private buildWordCardList(width: number) {
-    const listX = width - 220;
-    const listTop = 80;
+    const listX = width - 200;
+    const listTop = 200;
+
+    const panelHeight = Math.max(6, this.wordCards.length) * 48 + 72;
+    this.add
+      .rectangle(listX, listTop - 48, 220, panelHeight, 0x000000, 0.45)
+      .setOrigin(0.5, 0)
+      .setStrokeStyle(2, 0x7d6a4c, 0.8);
 
     this.add
-      .text(listX, 32, '可用字卡', {
+      .text(listX, listTop - 88, '可用字卡', {
         fontSize: '22px',
-        color: '#fff'
+        color: '#f7e9c6'
       })
       .setOrigin(0.5, 0);
 
@@ -217,16 +241,27 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
     for (let index = 0; index < totalRows; index += 1) {
       const card = this.wordCards[index];
       const labelText = card ? card.字 : '（空）';
+      const rowY = listTop + index * rowHeight;
+      const rowContainer = this.add.container(listX, rowY);
+      rowContainer.setSize(180, 40);
+
+      const rowBg = this.add
+        .rectangle(0, 0, 180, 40, 0x000000, card ? 0.35 : 0.18)
+        .setOrigin(0.5)
+        .setStrokeStyle(1.5, card ? 0xbba57b : 0x4a4030, 0.6);
+
       const text = this.add
-        .text(listX, listTop + index * rowHeight, labelText, {
+        .text(0, 0, labelText, {
           fontSize: '20px',
-          color: card ? '#aaf' : '#666'
+          color: card ? '#f0d9a7' : '#6f6453'
         })
-        .setOrigin(0.5, 0)
-        .setInteractive(card ? { useHandCursor: true } : undefined);
+        .setOrigin(0.5);
+
+      rowContainer.add([rowBg, text]);
 
       if (card) {
-        text.on('pointerup', () => {
+        rowContainer.setInteractive({ useHandCursor: true });
+        rowContainer.on('pointerup', () => {
           this.handleWordCardSelected(card);
         });
       }
@@ -234,38 +269,26 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
   }
 
   private buildOptionsPanel(width: number, height: number) {
-    const panelX = width * 0.6;
-    const panelWidth = width * 0.3;
+    const centerX = width / 2;
+    const centerY = height / 2 - 80;
 
-    this.optionContainer = this.add.container(panelX, 140);
-
-    const panelBg = this.add
-      .rectangle(0, 0, panelWidth, height - 220, 0x000000, 0.4)
-      .setOrigin(0, 0);
-    this.optionContainer.add(panelBg);
-
-    const title = this.add
-      .text(panelWidth / 2, 12, '溝通選項', {
-        fontSize: '20px',
-        color: '#fff'
-      })
-      .setOrigin(0.5, 0);
-    this.optionContainer.add(title);
-
-    this.optionList = new OptionList<GhostOption>(this, panelWidth / 2, 72, {
-      width: panelWidth - 24,
-      wrapWidth: panelWidth - 32,
-      align: 'center',
-      fontSize: '18px'
+    this.optionCarousel = new OptionCarousel<GhostOption>(this, centerX, centerY, {
+      cardWidth: 220,
+      cardHeight: 260,
+      gap: 48,
+      visibleCount: 3,
+      fontSize: '24px',
+      textColor: '#f1e5c7',
+      highlightColor: '#fff7cc',
+      backgroundAlpha: 0.35
     });
-    this.optionList.on('confirm', (item: OptionListItem<GhostOption>) => {
+    this.optionCarousel.on('confirm', (item: OptionCarouselItem<GhostOption>) => {
       const option = item.data;
       if (option) {
         this.applyOption(option);
       }
     });
-    this.optionContainer.add(this.optionList.container);
-    this.optionList.setMessage(['請選擇右側字卡']);
+    this.optionCarousel.setMessage(['請先從右側選擇字卡']);
   }
 
   private async handleWordCardSelected(card: WordCard) {
@@ -302,19 +325,21 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
   }
 
   private populateOptions(entries: { card: WordCard; option: GhostOption }[]) {
-    if (!this.optionList) {
+    if (!this.optionCarousel) {
       return;
     }
 
-    const items = entries.map(({ option }) => ({
+    const items: OptionCarouselItem<GhostOption>[] = entries.map(({ option }) => ({
       label: this.fitOptionText(String(option.text ?? '選項'), 40),
       data: option
     }));
-    this.optionList.setOptions(items);
+    this.optionCarousel.setOptions(items);
+    this.dialogueBox?.setText('選擇一張卡牌，以你認為最合適的方式回應亡魂。');
   }
 
   private setOptionsText(lines: string[]) {
-    this.optionList?.setMessage(lines);
+    this.optionCarousel?.setMessage(lines);
+    this.dialogueBox?.setText(lines.join('\n'));
   }
 
   private applyOption(option: GhostOption) {
@@ -393,7 +418,7 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
     if (Array.isArray(option.targets) && option.targets.length) {
       summaryParts.push(`影響執念：${this.describeTargets(option.targets)}`);
     }
-    this.feedbackText?.setText(summaryParts.join('\n'));
+    this.dialogueBox?.setText(summaryParts.join('\n'));
     this.statusText?.setText(this.getStatusSummary());
   }
 
@@ -466,13 +491,23 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
 
   private triggerRefusal() {
     const needPerson = this.spirit?.特例?.關鍵人物 ?? null;
-    this.feedbackText?.setText('她沉默了');
+    this.dialogueBox?.setText('她沉默了。');
     if (this.input) {
       this.input.enabled = false;
     }
     this.time.delayedCall(400, () => {
       this.finalizeCommunication({ needPerson });
     });
+  }
+
+  private describeMiasmaLevel() {
+    const level = this.world?.data.煞氣 ?? '清';
+    const map: Record<Miasma, string> = {
+      清: '1（清）',
+      濁: '2（濁）',
+      沸: '3（沸）'
+    };
+    return map[level as Miasma] ?? String(level);
   }
 
   private getStatusSummary() {
@@ -576,8 +611,10 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
   }
 
   private handleSceneShutdown() {
-    this.optionList?.destroy();
-    this.optionList = undefined;
+    this.optionCarousel?.destroy();
+    this.optionCarousel = undefined;
+    this.dialogueBox?.destroy();
+    this.dialogueBox = undefined;
     this.miasmaIndicator?.destroy();
     this.miasmaIndicator = undefined;
   }
