@@ -10,8 +10,10 @@ export interface CardBoardConfig {
   cardBackgroundAlpha?: number;
   cardHighlightColor?: number;
   titleFontSize?: string;
+  tagFontSize?: string;
   descriptionFontSize?: string;
   titleColor?: string;
+  tagColor?: string;
   descriptionColor?: string;
   messageColor?: string;
   navigationFontSize?: string;
@@ -21,6 +23,7 @@ export interface CardBoardItem<T = unknown> {
   id?: string;
   title: string;
   description?: string;
+  tags?: string[];
   data: T;
   disabled?: boolean;
 }
@@ -31,7 +34,10 @@ interface CardSlot<T> {
   container: Phaser.GameObjects.Container;
   background: Phaser.GameObjects.Rectangle;
   title: Phaser.GameObjects.Text;
+  tag: Phaser.GameObjects.Text;
   description: Phaser.GameObjects.Text;
+  descriptionBaseY: number;
+  descriptionWithTagY: number;
   data?: CardBoardItem<T>;
   disabled?: boolean;
 }
@@ -76,8 +82,10 @@ export default class CardBoard<T = unknown> extends Phaser.Events.EventEmitter {
       cardBackgroundAlpha: config.cardBackgroundAlpha ?? 0.82,
       cardHighlightColor: config.cardHighlightColor ?? 0x40362d,
       titleFontSize: config.titleFontSize ?? '28px',
+      tagFontSize: config.tagFontSize ?? '20px',
       descriptionFontSize: config.descriptionFontSize ?? '18px',
       titleColor: config.titleColor ?? '#f3e3c2',
+      tagColor: config.tagColor ?? '#d6c29c',
       descriptionColor: config.descriptionColor ?? '#d5c3a5',
       messageColor: config.messageColor ?? '#e8d9bd',
       navigationFontSize: config.navigationFontSize ?? '36px'
@@ -216,7 +224,18 @@ export default class CardBoard<T = unknown> extends Phaser.Events.EventEmitter {
   }
 
   private createSlot(x: number, y: number): CardSlot<T> {
-    const { cardWidth, cardHeight, cardBackgroundColor, cardBackgroundAlpha, titleFontSize, descriptionFontSize, titleColor, descriptionColor } = this.config;
+    const {
+      cardWidth,
+      cardHeight,
+      cardBackgroundColor,
+      cardBackgroundAlpha,
+      titleFontSize,
+      tagFontSize,
+      descriptionFontSize,
+      titleColor,
+      tagColor,
+      descriptionColor
+    } = this.config;
 
     const container = this.scene.add.container(x, y);
     container.setSize(cardWidth, cardHeight);
@@ -227,8 +246,9 @@ export default class CardBoard<T = unknown> extends Phaser.Events.EventEmitter {
       .setOrigin(0.5, 0.5)
       .setStrokeStyle(2, 0x715c43, 0.9);
 
+    const titleTop = -cardHeight / 2 + 24;
     const title = this.scene.add
-      .text(0, -cardHeight / 2 + 24, '', {
+      .text(0, titleTop, '', {
         fontSize: titleFontSize,
         color: titleColor,
         align: 'center',
@@ -236,8 +256,22 @@ export default class CardBoard<T = unknown> extends Phaser.Events.EventEmitter {
       })
       .setOrigin(0.5, 0);
 
+    const tagTop = titleTop + 44;
+    const tag = this.scene.add
+      .text(0, tagTop, '', {
+        fontSize: tagFontSize,
+        color: tagColor,
+        align: 'center',
+        wordWrap: { width: cardWidth - 36 }
+      })
+      .setOrigin(0.5, 0)
+      .setVisible(false);
+
+    const descriptionBaseY = -cardHeight / 2 + 86;
+    const descriptionWithTagY = tagTop + 36;
+
     const description = this.scene.add
-      .text(0, -cardHeight / 2 + 86, '', {
+      .text(0, descriptionBaseY, '', {
         fontSize: descriptionFontSize,
         color: descriptionColor,
         align: 'center',
@@ -245,7 +279,7 @@ export default class CardBoard<T = unknown> extends Phaser.Events.EventEmitter {
       })
       .setOrigin(0.5, 0);
 
-    container.add([background, title, description]);
+    container.add([background, title, tag, description]);
     container.setVisible(false);
 
     container.on('pointerover', () => {
@@ -270,7 +304,10 @@ export default class CardBoard<T = unknown> extends Phaser.Events.EventEmitter {
       container,
       background,
       title,
-      description
+      tag,
+      description,
+      descriptionBaseY,
+      descriptionWithTagY
     };
   }
 
@@ -292,6 +329,7 @@ export default class CardBoard<T = unknown> extends Phaser.Events.EventEmitter {
       slot.container.setData('item', undefined);
       slot.container.setData('disabled', true);
       slot.background.setFillStyle(this.config.cardBackgroundColor, this.config.cardBackgroundAlpha);
+      slot.tag.setVisible(false);
     });
   }
 
@@ -325,11 +363,22 @@ export default class CardBoard<T = unknown> extends Phaser.Events.EventEmitter {
         slot.container.setData('item', undefined);
         slot.container.setData('disabled', true);
         slot.background.setFillStyle(this.config.cardBackgroundColor, this.config.cardBackgroundAlpha);
+        slot.tag.setVisible(false);
         return;
       }
 
       slot.title.setText(item.title);
       slot.description.setText(item.description ?? '');
+      const tags = Array.isArray(item.tags) ? item.tags.filter((tag) => Boolean(tag)) : [];
+      if (tags.length) {
+        slot.tag.setText(tags.join(' / '));
+        slot.tag.setVisible(true);
+        slot.description.setY(slot.descriptionWithTagY);
+      } else {
+        slot.tag.setText('');
+        slot.tag.setVisible(false);
+        slot.description.setY(slot.descriptionBaseY);
+      }
       slot.container.setData('item', item);
       slot.container.setData('disabled', Boolean(item.disabled));
       slot.container.setVisible(true);
@@ -337,10 +386,12 @@ export default class CardBoard<T = unknown> extends Phaser.Events.EventEmitter {
       if (item.disabled) {
         slot.background.setAlpha(this.config.cardBackgroundAlpha * 0.6);
         slot.title.setAlpha(0.6);
+        slot.tag.setAlpha(0.6);
         slot.description.setAlpha(0.6);
       } else {
         slot.background.setAlpha(this.config.cardBackgroundAlpha);
         slot.title.setAlpha(1);
+        slot.tag.setAlpha(0.9);
         slot.description.setAlpha(0.9);
       }
     });
@@ -366,5 +417,9 @@ export default class CardBoard<T = unknown> extends Phaser.Events.EventEmitter {
     }
     this.pageIndex = next;
     this.refresh();
+  }
+
+  getHeight() {
+    return this.background.height;
   }
 }

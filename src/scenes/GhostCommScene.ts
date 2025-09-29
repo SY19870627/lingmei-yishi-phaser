@@ -135,22 +135,6 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
 
     this.buildHeader();
 
-    this.cardBoard = new CardBoard<CardChoiceData>(this, width / 2, height / 2 - 60, {
-      cardWidth: 220,
-      cardHeight: 168,
-      cardSpacing: 54,
-      titleFontSize: '30px',
-      descriptionFontSize: '18px'
-    });
-    this.cardBoard.on('select', this.handleCardBoardSelection, this);
-    this.cardBoard.on('pagechange', (pageIndex: number) => {
-      if (this.boardMode === 'wordcard') {
-        this.wordCardPage = pageIndex;
-      } else if (this.boardMode === 'item') {
-        this.itemPage = pageIndex;
-      }
-    });
-
     this.dialogueBox = new DialogueBox(this, width / 2 - 340, height - 220, {
       width: 680,
       height: 190,
@@ -161,12 +145,35 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
     });
     this.dialogueBox.setText('請選擇卡牌與靈體交涉。');
 
+    const dialogueTop = this.dialogueBox.container.y;
+
+    this.cardBoard = new CardBoard<CardChoiceData>(this, width / 2, dialogueTop - 120, {
+      cardWidth: 220,
+      cardHeight: 168,
+      cardSpacing: 54,
+      titleFontSize: '30px',
+      tagFontSize: '20px',
+      descriptionFontSize: '18px'
+    });
+    const boardHeight = this.cardBoard.getHeight();
+    this.cardBoard.container.setY(dialogueTop - boardHeight / 2);
+    this.cardBoard.on('select', this.handleCardBoardSelection, this);
+    this.cardBoard.on('pagechange', (pageIndex: number) => {
+      if (this.boardMode === 'wordcard') {
+        this.wordCardPage = pageIndex;
+      } else if (this.boardMode === 'item') {
+        this.itemPage = pageIndex;
+      }
+    });
+
+    const backButtonY = dialogueTop - 12;
+
     this.backButton = this.add
-      .text(width / 2, height / 2 + 140, '返回選牌', {
+      .text(width / 2, backButtonY, '返回選牌', {
         fontSize: '20px',
         color: '#f3e3c2'
       })
-      .setOrigin(0.5, 0)
+      .setOrigin(0.5, 1)
       .setVisible(false)
       .setInteractive({ useHandCursor: true });
     this.backButton.on('pointerup', () => {
@@ -345,13 +352,13 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
     }
 
     const items: CardBoardItem<CardChoiceData>[] = this.wordCards.map((card, index) => {
-      const tags = Array.isArray(card.標籤) && card.標籤.length ? `標籤：${card.標籤.join('、')}` : '';
+      const tags = Array.isArray(card.標籤) ? card.標籤.slice() : [];
       const notes = card.備註 ? String(card.備註) : '';
-      const description = [tags, notes].filter(Boolean).join('\n');
       return {
         id: card.id ?? `card-${index}`,
         title: card.字 ?? card.id ?? `卡牌 ${index + 1}`,
-        description,
+        description: notes,
+        tags,
         data: { kind: 'wordcard', card }
       };
     });
