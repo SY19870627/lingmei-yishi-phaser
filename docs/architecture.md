@@ -14,15 +14,12 @@
   - 讓玩家選擇錨點 → `StoryScene` → 完成後更新列表。
 - `StoryScene`
   - 讀取指定劇情節點並依 `steps` 執行。
-  - 透過 `Router` push 呼叫 `GhostCommScene` 與 `MediationScene`，等待 Promise resolve 再繼續。
+  - 透過 `Router` push 呼叫 `GhostCommScene`，等待 Promise resolve 再繼續。
   - 直接操作 `WorldState` 更新旗標與物品。
 - `GhostCommScene`
   - 從 `DataRepo` 讀取靈體與字卡。
   - 呼叫 `AiOrchestrator.genGhostOptions` 取得溝通選項。
-  - 完成後回傳解結、煞氣變化與是否需調解 NPC。
-- `MediationScene`
-  - 讀取 NPC 資料，依輸入文字調整階段。
-  - 完成後回傳調解結果與解決的執念清單。
+  - 完成後回傳解結、煞氣變化與是否需要旁人協助。
 - 其他模組（Inventory / WordCards / Hints）
   - 皆由 `ShellScene` 或其他場景以 `Router.push` 開啟並回傳結果。
 

@@ -17,24 +17,19 @@
    - 按鈕停用等待故事 Promise 完成。
 6. **StoryScene 執行步驟**：
    - 依 `steps` 逐一處理：
-     1. `TEXT`：逐字顯示旁白與亡魂台詞，玩家可點擊跳過剩餘文字後進入下一句。
-     2. `SCREEN_EFFECT`：透過 `screenEffects` 對照表觸發淡入、淡出或震動等畫面特效，支援自訂時長與覆蓋色。
-     3. `CHOICE`：顯示多個互動選項，可跳轉段落、啟動新劇情或直接呼叫亡魂交談／調解。
-     4. `CALL_GHOST_COMM`：以 `Router.push('GhostCommScene', { spiritId })` 呼叫溝通模組，暫停後續步驟直至 Promise resolve。
-     5. `CALL_MEDIATION`：若 `GhostCommScene` 回傳 `needPerson` 或故事腳本含 `CALL_MEDIATION`，以 `Router.push('MediationScene', { npcId })` 啟動調解。
-     6. `END`：全部步驟完成後呼叫 `done({ flagsUpdated })`，回傳更新的旗標陣列。
+    1. `TEXT`：逐字顯示旁白與亡魂台詞，玩家可點擊跳過剩餘文字後進入下一句。
+    2. `SCREEN_EFFECT`：透過 `screenEffects` 對照表觸發淡入、淡出或震動等畫面特效，支援自訂時長與覆蓋色。
+    3. `CHOICE`：顯示多個互動選項，可跳轉段落、啟動新劇情或直接呼叫亡魂交談。
+    4. `CALL_GHOST_COMM`：以 `Router.push('GhostCommScene', { spiritId })` 呼叫溝通模組，暫停後續步驟直至 Promise resolve。
+    5. `END`：全部步驟完成後呼叫 `done({ flagsUpdated })`，回傳更新的旗標陣列。
 7. **GhostCommScene 運行**：
    - 讀取 `spirits.json`、`wordcards.json`，建立介面。
    - 玩家挑選字卡時，呼叫 `AiOrchestrator.genGhostOptions({ spirit, word, world })` 取得選項。
    - 套用選項後透過 `done({ resolvedKnots, miasma, needPerson })` 回傳資訊。
-8. **MediationScene 運行**：
-   - 讀取 `npcs.json`，依 NPC 自訂 `轉折階段` 建立階段流程。
-   - 玩家輸入句子，`evaluateMessage` 解析關鍵字，並更新 `currentStage`。
-   - 結束時 `done({ npcId, stage, resolved })`，將解決的執念回傳故事。
-9. **StoryScene 收尾**：
-   - 根據調解結果呼叫 `WorldState.setFlag`，並在特定條件下更新 `已安息靈`。
+8. **StoryScene 收尾**：
+   - 根據靈體對話與旗標變更呼叫 `WorldState.setFlag`，並在特定條件下更新 `已安息靈`。
    - 顯示 Toast 通知後返回 MapScene。
-10. **MapScene → ShellScene**：
+9. **MapScene → ShellScene**：
     - 接收故事回傳的旗標，重新整理可啟動劇情列表與提示。
     - 離開地圖與返回 ShellScene 時會使用黑場淡出／淡入過場，保持場景切換的連續感。
     - 玩家關閉地圖，`MapScene.done()`，Promise resolve 後控制權回到 `ShellScene`，完成一輪主線時序。

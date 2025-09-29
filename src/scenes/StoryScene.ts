@@ -20,18 +20,15 @@ type StoryScreenEffectStep =
   StoryBaseStep & { t: 'SCREEN_EFFECT'; effectId: string; duration?: number; color?: string };
 type StoryEndStep = StoryBaseStep & { t: 'END' };
 type StoryCallGhostCommStep = StoryBaseStep & { t: 'CALL_GHOST_COMM'; spiritId: string };
-type StoryCallMediationStep = StoryBaseStep & { t: 'CALL_MEDIATION'; npcId: string };
 type StoryChoiceOptionBase = { text: string; nextLineId?: string };
 type StoryChoiceGotoOption = StoryChoiceOptionBase & { action: 'GOTO_LINE'; targetLineId: string };
 type StoryChoiceStartStoryOption = StoryChoiceOptionBase & { action: 'START_STORY'; storyId: string };
 type StoryChoiceCallGhostOption = StoryChoiceOptionBase & { action: 'CALL_GHOST_COMM'; spiritId: string };
-type StoryChoiceCallMediationOption = StoryChoiceOptionBase & { action: 'CALL_MEDIATION'; npcId: string };
 type StoryChoiceEndOption = StoryChoiceOptionBase & { action: 'END' };
 type StoryChoiceOption =
   | StoryChoiceGotoOption
   | StoryChoiceStartStoryOption
   | StoryChoiceCallGhostOption
-  | StoryChoiceCallMediationOption
   | StoryChoiceEndOption;
 type StoryChoiceStep = StoryBaseStep & { t: 'CHOICE'; options: StoryChoiceOption[] };
 type StoryStep =
@@ -41,7 +38,6 @@ type StoryStep =
   | StoryScreenEffectStep
   | StoryEndStep
   | StoryCallGhostCommStep
-  | StoryCallMediationStep
   | StoryChoiceStep
   | { t: string; [key: string]: unknown };
 
@@ -51,8 +47,6 @@ type StoryNode = {
 };
 
 type GhostCommResult = { resolvedKnots?: string[]; miasma?: string; needPerson?: string };
-type MediationResult = { npcId: string; stage: string; resolved: string[] };
-
 const zhBase = {
   fontFamily: 'Noto Sans TC, PingFang TC, "Microsoft JhengHei", sans-serif',
   padding: { top: 6, bottom: 2 },
@@ -78,7 +72,6 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
   private dialogueBoxSize = { width: 0, height: 0 };
   private activeTextObject?: Phaser.GameObjects.Text;
   private choiceTexts: Phaser.GameObjects.Text[] = [];
-  private skipNextMediationStep = false;
   private storyId?: string;
   private storyLoaded = false;
   private activeSpiritId?: string;
@@ -227,7 +220,6 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
     this.flagsUpdated = new Set<string>();
     this.storyId = undefined;
     this.storyLoaded = false;
-    this.skipNextMediationStep = false;
     this.activeSpiritId = undefined;
     this.spiritsLoaded = false;
     this.spiritCache.clear();
@@ -309,16 +301,6 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
               continue;
             }
             this.handleCallGhostComm(step);
-            return;
-          }
-          break;
-        case 'CALL_MEDIATION':
-          if (this.skipNextMediationStep) {
-            this.skipNextMediationStep = false;
-            continue;
-          }
-          if (this.isCallMediationStep(step)) {
-            this.handleCallMediation(step);
             return;
           }
           break;
@@ -444,24 +426,10 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
         this.showToast(`靈體溝通完成，煞氣：${miasma}\n${resolvedSummary}`);
 
         if (result?.needPerson) {
-          const needPerson = result.needPerson;
-          if (!this.router) {
-            this.showToast('缺少路由，無法調解。');
-            return;
-          }
-          this.skipNextMediationStep = true;
-          try {
-            const mediationResult = await this.router.push<{ npcId: string }, MediationResult>(
-              'MediationScene',
-              { npcId: needPerson }
-            );
-            await this.processMediationResult(mediationResult, spiritId);
-          } catch (error) {
-            console.error(error);
-            this.showToast('調解未完成。');
-            this.skipNextMediationStep = false;
-          }
+          this.showToast('靈體希望請人協助，但目前無法進行交涉。');
         }
+
+        await this.updateSpiritResolution(spiritId);
       })
       .catch(() => {
         this.showToast('靈體溝通未完成。');
@@ -469,52 +437,6 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
       .finally(() => {
         this.advance();
       });
-  }
-
-  private handleCallMediation(step: StoryCallMediationStep) {
-    this.promptText.setVisible(false);
-    if (!this.router || !step.npcId) {
-      this.showToast('無法進行調解。');
-      return;
-    }
-
-    void this.pushMediationScene(step.npcId, this.activeSpiritId)
-      .catch(() => {
-        this.showToast('調解未完成。');
-      })
-      .finally(() => {
-        this.advance();
-      });
-  }
-
-  private async pushMediationScene(npcId: string, spiritId?: string) {
-    if (!this.router) {
-      throw new Error('缺少路由，無法調解');
-    }
-
-    const result = await this.router.push<{ npcId: string }, MediationResult>('MediationScene', {
-      npcId
-    });
-
-    await this.processMediationResult(result, spiritId);
-  }
-
-  private async processMediationResult(result: MediationResult, spiritId?: string) {
-    const resolved = Array.isArray(result.resolved) ? result.resolved : [];
-    const world = this.world;
-    if (resolved.length && world) {
-      resolved.forEach((obsessionId) => {
-        if (!obsessionId) {
-          return;
-        }
-        world.data.旗標[`obsession:${obsessionId}`] = '已解';
-      });
-    }
-
-    const summary = resolved.length ? `已解決：${resolved.join('、')}` : '仍待努力';
-    this.showToast(`調解階段：${result.stage}\n${summary}`);
-
-    await this.updateSpiritResolution(spiritId);
   }
 
   private async updateSpiritResolution(spiritId?: string) {
@@ -595,10 +517,6 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
     return step.t === 'CALL_GHOST_COMM' && typeof (step as Partial<StoryCallGhostCommStep>).spiritId === 'string';
   }
 
-  private isCallMediationStep(step: StoryStep): step is StoryCallMediationStep {
-    return step.t === 'CALL_MEDIATION' && typeof (step as Partial<StoryCallMediationStep>).npcId === 'string';
-  }
-
   private isScreenEffectStep(step: StoryStep): step is StoryScreenEffectStep {
     return step.t === 'SCREEN_EFFECT' && typeof (step as Partial<StoryScreenEffectStep>).effectId === 'string';
   }
@@ -675,10 +593,6 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
       case 'CALL_GHOST_COMM':
         this.schedulePendingJump(option.nextLineId);
         this.handleCallGhostComm({ t: 'CALL_GHOST_COMM', spiritId: option.spiritId, lineId: option.nextLineId });
-        break;
-      case 'CALL_MEDIATION':
-        this.schedulePendingJump(option.nextLineId);
-        this.handleCallMediation({ t: 'CALL_MEDIATION', npcId: option.npcId, lineId: option.nextLineId });
         break;
       case 'END':
         this.finishStory();

@@ -3,7 +3,6 @@ import type { AnySchema, ErrorObject, ValidateFunction } from 'ajv';
 import addFormats from 'ajv-formats';
 import sacredItemSchema from '../../schemas/sacred-item.schema.json' assert { type: 'json' };
 import wordcardSchema from '../../schemas/wordcard.schema.json' assert { type: 'json' };
-import npcSchema from '../../schemas/npc.schema.json' assert { type: 'json' };
 import spiritSchema from '../../schemas/spirit.schema.json' assert { type: 'json' };
 import anchorSchema from '../../schemas/anchor.schema.json' assert { type: 'json' };
 import storySchema from '../../schemas/story.schema.json' assert { type: 'json' };
@@ -12,7 +11,6 @@ import mapSchema from '../../schemas/map.schema.json' assert { type: 'json' };
 type SchemaName =
   | 'sacred-item'
   | 'wordcard'
-  | 'npc'
   | 'spirit'
   | 'anchor'
   | 'story'
@@ -21,7 +19,6 @@ type SchemaName =
 const SCHEMAS: Record<SchemaName, AnySchema> = {
   'sacred-item': sacredItemSchema,
   'wordcard': wordcardSchema,
-  'npc': npcSchema,
   'spirit': spiritSchema,
   'anchor': anchorSchema,
   'story': storySchema,

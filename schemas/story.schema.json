@@ -45,16 +45,6 @@
             {
               "type": "object",
               "additionalProperties": false,
-              "required": ["t", "npcId"],
-              "properties": {
-                "t": { "const": "CALL_MEDIATION" },
-                "npcId": { "type": "string" },
-                "lineId": { "type": "string" }
-              }
-            },
-            {
-              "type": "object",
-              "additionalProperties": false,
               "required": ["t", "itemId"],
               "properties": {
                 "t": { "const": "GIVE_ITEM" },
@@ -137,17 +127,6 @@
                           "action": { "const": "CALL_GHOST_COMM" },
                           "text": { "type": "string" },
                           "spiritId": { "type": "string" },
-                          "nextLineId": { "type": "string" }
-                        }
-                      },
-                      {
-                        "type": "object",
-                        "additionalProperties": false,
-                        "required": ["action", "text", "npcId"],
-                        "properties": {
-                          "action": { "const": "CALL_MEDIATION" },
-                          "text": { "type": "string" },
-                          "npcId": { "type": "string" },
                           "nextLineId": { "type": "string" }
                         }
                       },
