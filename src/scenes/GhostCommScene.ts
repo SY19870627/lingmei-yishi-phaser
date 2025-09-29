@@ -46,6 +46,11 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
     super('GhostCommScene');
   }
 
+  override init(data: unknown) {
+    super.init(data);
+    this.resetState();
+  }
+
   async create() {
     const spiritId = this.route?.in?.spiritId;
     this.repo = this.registry.get('repo') as DataRepo | undefined;
@@ -77,6 +82,26 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       this.showErrorAndExit(`讀取資料時發生錯誤：${message}`);
+    }
+  }
+
+  private resetState() {
+    this.spirit = undefined;
+    this.wordCards = [];
+    this.statusText = undefined;
+    this.optionContainer = undefined;
+    this.optionList = undefined;
+    this.feedbackText = undefined;
+    this.miasmaIndicator = undefined;
+    this.obsessionState.clear();
+    this.knotTags.clear();
+    this.loadingOptions = false;
+    this.consecutiveAccusations = 0;
+    this.lastAccusationKey = undefined;
+    this.concluded = false;
+    this.cachedStepKey = undefined;
+    if (this.input) {
+      this.input.enabled = true;
     }
   }
 
