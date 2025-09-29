@@ -180,17 +180,6 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
     });
 
     this.buildFooter();
-    const closeButton = this.add
-      .text(width - 36, 32, '✕', {
-        fontSize: '32px',
-        color: '#f3e3c2'
-      })
-      .setOrigin(1, 0)
-      .setInteractive({ useHandCursor: true });
-    closeButton.on('pointerup', () => {
-      this.finish();
-    });
-
     this.buildObsessionTags();
     this.showWordCardChoices(true);
 
@@ -483,11 +472,11 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
     }
 
     const listX = 32;
-    const listTop = 150;
+    const listTop = 200;
     const spacing = 52;
 
     this.add
-      .text(listX, 128, '她的執念', {
+      .text(listX, 160, '她的執念', {
         fontSize: '22px',
         color: '#f3e3c2'
       })
