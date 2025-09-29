@@ -76,7 +76,19 @@
 | --- | --- | --- |
 | `id` | `string` | 劇情節點代號。 |
 | `anchor` | `string` | 所屬錨點 id。 |
-| `steps` | `StoryStep[]` | 劇情步驟陣列。每一句 `TEXT` 對白都必須填寫唯一的 `lineId` 以供跳轉與服務判斷。`StoryStep` 可為 `TEXT`、`GIVE_ITEM`、`UPDATE_FLAG`、`CALL_GHOST_COMM`、`CALL_MEDIATION`、`CHOICE`、`END` 等指令。 |
+| `steps` | `StoryStep[]` | 劇情步驟陣列。每一句 `TEXT` 對白都必須填寫唯一的 `lineId` 以供跳轉與服務判斷。`StoryStep` 支援：`TEXT`、`SCREEN_EFFECT`、`GIVE_ITEM`、`UPDATE_FLAG`、`CALL_GHOST_COMM`、`CALL_MEDIATION`、`CHOICE`、`END`。 |
+
+### StoryStep 類型摘要
+| 指令 | 必填欄位 | 選填欄位 | 用途 |
+| --- | --- | --- | --- |
+| `TEXT` | `who`、`text`、`lineId` | `updates` | 顯示角色台詞或旁白並以逐字效果呈現。 |
+| `SCREEN_EFFECT` | `effectId` | `duration`、`color`、`lineId` | 觸發畫面特效（淡入、淡出、震動等）。 `duration` 為秒數，`color` 覆蓋顏色字串。 |
+| `GIVE_ITEM` | `itemId` | `message`、`lineId` | 將物品加入玩家道具欄並提示訊息。 |
+| `UPDATE_FLAG` | `flag`、`value` | `lineId` | 直接修改世界旗標。 |
+| `CALL_GHOST_COMM` | `spiritId` | `lineId` | 進入亡魂交談模組。 |
+| `CALL_MEDIATION` | `npcId` | `lineId` | 進入調解模組。 |
+| `CHOICE` | `lineId`、`options[]` | `options[].nextLineId` | 顯示多選分支，可跳轉行或觸發其他場景。 |
+| `END` | - | `lineId` | 結束故事步驟。 |
 
 ## GhostOption
 | 欄位 | 型別 | 說明 |
@@ -109,4 +121,4 @@
 - `schemas/spirit.schema.json`：`Spirit` 的 `id`、`名稱`、`年代`、`場域_anchor`、`初始狀態`、`煞氣`、`背景`、`執念`、`特例`、`限制`。
 - `schemas/anchor.schema.json`：`Anchor` 的 `id`、`地點`、`條件`、`完成後`。
 - `schemas/map.schema.json`：`MapDef` 的 `id`、`image`。
-- `schemas/story.schema.json`：`StoryNode` 的 `id`、`anchor`、`service` 與各類 `steps` 類型（`TEXT`、`CALL_GHOST_COMM`、`CALL_MEDIATION`、`GIVE_ITEM`、`UPDATE_FLAG`、`CHOICE`、`END`）。
+- `schemas/story.schema.json`：`StoryNode` 的 `id`、`anchor`、`service` 與各類 `steps` 類型（`TEXT`、`SCREEN_EFFECT`、`CALL_GHOST_COMM`、`CALL_MEDIATION`、`GIVE_ITEM`、`UPDATE_FLAG`、`CHOICE`、`END`）。

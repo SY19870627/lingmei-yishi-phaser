@@ -28,6 +28,7 @@ export default class MapScene extends ModuleScene {
   private accessibleAnchors: DirectedAnchor[] = [];
   private hintIndicator?: Phaser.GameObjects.Container;
   private mapArt?: MapArt;
+  private isTransitioning = false;
 
   constructor() {
     super('MapScene');
@@ -158,7 +159,8 @@ export default class MapScene extends ModuleScene {
 
     this.accessibleAnchors.forEach((anchor, index) => {
       const isCurrent = anchor.地點 === this.currentLocation;
-      const ghostState = GhostDirector.getState(anchor.服務靈, this.world);
+      const serviceSpiritId = anchor.meta?.service?.spiritId;
+      const ghostState = GhostDirector.getState(serviceSpiritId ?? '', this.world);
       const resolved = ghostState === '安息' || Boolean(anchor.meta?.resolved);
       const displayText = resolved ? '　' : `${isCurrent ? '★' : '・'}${anchor.地點}`;
       const color = resolved ? '#444' : isCurrent ? '#ff0' : '#aaf';
@@ -188,6 +190,10 @@ export default class MapScene extends ModuleScene {
       return;
     }
 
+    if (this.isTransitioning) {
+      return;
+    }
+
     const destination = anchor.地點;
     if (destination === this.currentLocation) {
       this.showMessage('已在此地');
@@ -199,11 +205,54 @@ export default class MapScene extends ModuleScene {
       return;
     }
 
-    this.world.data.位置 = destination;
-    this.currentLocation = destination;
+    this.beginLocationTransition(destination);
+  }
 
-    this.showMessage(`已移動至 ${destination}`);
-    this.refreshMapState();
+  private beginLocationTransition(destination: string) {
+    const world = this.world;
+    if (!world) {
+      return;
+    }
+
+    this.isTransitioning = true;
+    this.showMessage('移動中……');
+
+    const camera = this.cameras.main;
+    if (!camera) {
+      world.data.位置 = destination;
+      this.currentLocation = destination;
+      this.refreshMapState();
+      this.showMessage(`已移動至 ${destination}`);
+      this.isTransitioning = false;
+      return;
+    }
+
+    const duration = 400;
+
+    camera.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
+      world.data.位置 = destination;
+      this.currentLocation = destination;
+      this.refreshMapState();
+      camera.fadeIn(duration, 0, 0, 0);
+    });
+
+    camera.once(Phaser.Cameras.Scene2D.Events.FADE_IN_COMPLETE, () => {
+      this.showMessage(`已移動至 ${destination}`);
+      this.isTransitioning = false;
+    });
+
+    camera.fadeOut(duration, 0, 0, 0);
+
+    this.time.delayedCall(duration * 2 + 100, () => {
+      if (!this.isTransitioning) {
+        return;
+      }
+      world.data.位置 = destination;
+      this.currentLocation = destination;
+      this.refreshMapState();
+      this.showMessage(`已移動至 ${destination}`);
+      this.isTransitioning = false;
+    });
   }
 
   private renderStoryList() {

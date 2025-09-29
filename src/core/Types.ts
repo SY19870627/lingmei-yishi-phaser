@@ -18,6 +18,7 @@ export interface StoryNode {
         | {t:"CALL_MEDIATION"; npcId:string; lineId?:string}
         | {t:"GIVE_ITEM"; itemId:string; lineId?:string}
         | {t:"UPDATE_FLAG"; flag:string; value:any; lineId?:string}
+        | {t:"SCREEN_EFFECT"; effectId:string; duration?:number; color?:string; lineId?:string}
         | {t:"END"; lineId?:string}
         | {t:"CHOICE"; lineId?:string; options:(
               {action:"GOTO_LINE"; text:string; targetLineId:string; nextLineId?:string}

@@ -34,21 +34,28 @@
 2. 填寫欄位：
    - `id`：全域唯一，通常以錨點或亡魂為前綴，例如 `story_port_market_01`。
    - `anchor`：指向觸發劇情的 Anchor `id`。
-   - `steps`：依序列出劇情步驟，類型需符合 `schemas/story.schema.json` 的定義：
-   - `service`：記錄該劇情對應的亡魂（`spiritId`）與觸發行數（`triggerLine`，從 1 開始計算）。若觸發點是一個 `CHOICE` 選項，請將 `triggerLine` 指向該 `CHOICE` 的 `lineId` 所在行序。
+    - `steps`：依序列出劇情步驟，類型需符合 `schemas/story.schema.json` 的定義：
+     - `service`：記錄該劇情對應的亡魂（`spiritId`）與觸發行數（`triggerLine`，從 1 開始計算）。若觸發點是一個 `CHOICE` 選項，請將 `triggerLine` 指向該 `CHOICE` 的 `lineId` 所在行序。
      - `TEXT`：一般敘事，需含 `who`（說話者）與 `text`（內容），並必填唯一的 `lineId` 方便跳轉與服務定位，可選 `updates` 記錄旗標變化描述。
-     - `CALL_GHOST_COMM`：啟動亡魂交談，需提供 `spiritId`。
-     - `CALL_MEDIATION`：呼叫凡人協調，需提供 `npcId`。
-     - `GIVE_ITEM`：給予物品，需提供 `itemId` 與可選的 `message` 提示。
-     - `UPDATE_FLAG`：直接修改旗標，需提供 `flag` 與 `value`。
+      - `SCREEN_EFFECT`：呼叫畫面特效，例如淡入淡出或震動。需提供 `effectId`（對應 `StoryScene` 內註冊的效果）、可選的 `duration`（秒）與 `color`（覆蓋顏色，如 `#000000`），並建議附上 `lineId` 方便追蹤。
+      - `CALL_GHOST_COMM`：啟動亡魂交談，需提供 `spiritId`。
+      - `CALL_MEDIATION`：呼叫凡人協調，需提供 `npcId`。
+      - `GIVE_ITEM`：給予物品，需提供 `itemId` 與可選的 `message` 提示。
+      - `UPDATE_FLAG`：直接修改旗標，需提供 `flag` 與 `value`。
      - `CHOICE`：提供多個分支選項，需給每個選項 `text`（顯示文字）與對應動作：
        - `GOTO_LINE`：跳轉到同劇情中指定的 `targetLineId`。
        - `CALL_GHOST_COMM`／`CALL_MEDIATION`：立即進入亡魂談判或調解，完成後會自動跳至 `nextLineId`（若有設定）。
        - `START_STORY`：串接到另一段劇情，通常會立即結束當前故事。
        - `END`：結束當前劇情流程。
-       - `nextLineId` 可搭配任一動作用於指定後續銜接的段落。
+      - `nextLineId` 可搭配任一動作用於指定後續銜接的段落。
      - `END`：結束本段劇情。
 3. 確保故事內容與亡魂／錨點設定一致，並檢查 `steps` 中引用的 `itemId`、`spiritId`、`npcId` 已存在於對應資料檔。
+
+### SCREEN_EFFECT 使用建議
+- `effectId` 目前支援 `"fade_in"`、`"fade_out"`、`"shake"` 等程式內建效果，可在 `StoryScene` 的 `screenEffects` 映射中擴充自訂動畫。
+- 若需要覆蓋顏色（例如淡入黑場），請設定 `color`（支援 HEX 或 `rgba()` 字串）。未填寫時會使用效果預設值。
+- `duration` 以秒為單位，預設值依效果類型（例如淡入淡出預設 0.6 秒）。可視需要縮短或延長與對話節奏一致。
+- 特效執行時仍可搭配 `TEXT` 或其他步驟，建議在劇情中安排緩衝句讓玩家感知變化，並於 `lineId` 加上前綴（例如 `fx_`）方便排錯。
 
 ## 「唯一性鍵」規範
 - 欄位位置：每個亡魂物件的 `限制.唯一性鍵`（`string[]`）。若未指定，系統將預設使用 `id` 判斷是否重複。
