@@ -59,6 +59,11 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
   private router?: Router;
   private textBox!: Phaser.GameObjects.Text;
   private promptText!: Phaser.GameObjects.Text;
+  private dialogueContainer!: Phaser.GameObjects.Container;
+  private dialogueText!: Phaser.GameObjects.Text;
+  private speakerNameText!: Phaser.GameObjects.Text;
+  private dialogueBoxSize = { width: 0, height: 0 };
+  private activeTextObject?: Phaser.GameObjects.Text;
   private choiceTexts: Phaser.GameObjects.Text[] = [];
   private skipNextMediationStep = false;
   private storyId?: string;
@@ -101,6 +106,36 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
       })
       .setOrigin(0.5)
       .setVisible(false);
+
+    const dialogueWidth = Math.max(320, width - 120);
+    const dialogueHeight = Math.max(160, height * 0.28);
+    const dialogueBackground = this.add
+      .rectangle(0, 0, dialogueWidth, dialogueHeight, 0x000000, 0.75)
+      .setOrigin(0.5)
+      .setStrokeStyle(2, 0xffffff, 0.4);
+    this.speakerNameText = this.add
+      .text(-dialogueWidth / 2 + 24, -dialogueHeight / 2 + 18, '', {
+        fontSize: '20px',
+        color: '#ffd54f',
+        fontStyle: 'bold'
+      })
+      .setOrigin(0, 0);
+    this.dialogueText = this.add
+      .text(-dialogueWidth / 2 + 24, -dialogueHeight / 2 + 56, '', {
+        fontSize: '22px',
+        color: '#fff',
+        wordWrap: { width: dialogueWidth - 48 }
+      })
+      .setOrigin(0, 0);
+
+    this.dialogueContainer = this.add
+      .container(width / 2, height - dialogueHeight / 2 - 40, [
+        dialogueBackground,
+        this.speakerNameText,
+        this.dialogueText
+      ])
+      .setVisible(false);
+    this.dialogueBoxSize = { width: dialogueWidth, height: dialogueHeight };
 
     this.input.on('pointerup', () => {
       if (this.isTypewriterRunning()) {
@@ -180,6 +215,18 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
     this.typewriterIndex = 0;
     this.screenEffectInProgress = false;
     this.clearScreenEffectTimer();
+    if (this.dialogueContainer) {
+      this.dialogueContainer.setVisible(false);
+    }
+    if (this.speakerNameText) {
+      this.speakerNameText.setText('');
+    }
+    if (this.dialogueText) {
+      this.dialogueText.setText('');
+    }
+    if (this.textBox) {
+      this.textBox.setVisible(true);
+    }
   }
 
   private advance() {
@@ -257,10 +304,38 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
 
   private displayText(step: StoryTextStep) {
     this.clearChoices();
-    const lines = step.who ? `${step.who}：${step.text}` : step.text;
+    const speaker = step.who?.trim();
     this.promptText.setText('點擊繼續').setVisible(false);
     this.awaitingInput = false;
-    this.startTypewriter(lines ?? '');
+
+    if (speaker) {
+      this.showDialogueText(speaker, step.text ?? '');
+      return;
+    }
+
+    this.showNarrationText(step.text ?? '');
+  }
+
+  private showNarrationText(text: string) {
+    this.textBox.setVisible(true);
+    this.dialogueContainer.setVisible(false);
+    this.activeTextObject = this.textBox;
+    this.textBox.setText('');
+    this.promptText.setPosition(this.scale.width / 2, this.scale.height / 2 + 60);
+    this.startTypewriter(text, this.textBox);
+  }
+
+  private showDialogueText(speaker: string, text: string) {
+    this.textBox.setVisible(false);
+    this.dialogueContainer.setVisible(true);
+    this.speakerNameText.setText(speaker);
+    this.dialogueText.setText('');
+    this.activeTextObject = this.dialogueText;
+    this.promptText.setPosition(
+      this.dialogueContainer.x,
+      this.dialogueContainer.y + this.dialogueBoxSize.height / 2 + 28
+    );
+    this.startTypewriter(text, this.dialogueText);
   }
 
   private handleGiveItem(step: StoryGiveItemStep) {
@@ -570,12 +645,13 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
     }
   }
 
-  private startTypewriter(text: string) {
+  private startTypewriter(text: string, target: Phaser.GameObjects.Text) {
     this.cancelTypewriter();
     this.typewriterFullText = text;
     this.typewriterIndex = 0;
     this.typewriterActive = true;
-    this.textBox.setText('');
+    this.activeTextObject = target;
+    target.setText('');
 
     if (!text || text.length === 0) {
       this.completeTypewriter();
@@ -583,12 +659,13 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
     }
 
     const delay = this.getTypewriterDelay();
+    const typewriterTarget = target;
     this.typewriterTimer = this.time.addEvent({
       delay,
       loop: true,
       callback: () => {
         this.typewriterIndex++;
-        this.textBox.setText(this.typewriterFullText.slice(0, this.typewriterIndex));
+        typewriterTarget.setText(this.typewriterFullText.slice(0, this.typewriterIndex));
         if (this.typewriterIndex >= this.typewriterFullText.length) {
           this.completeTypewriter();
         }
@@ -623,7 +700,9 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
 
     this.cancelTypewriter();
     this.typewriterIndex = this.typewriterFullText.length;
-    this.textBox.setText(this.typewriterFullText);
+    if (this.activeTextObject) {
+      this.activeTextObject.setText(this.typewriterFullText);
+    }
     this.awaitingInput = true;
     this.promptText.setText('點擊繼續').setVisible(true);
   }
@@ -760,6 +839,9 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
   }
 
   private showErrorAndExit(message: string) {
+    this.textBox.setVisible(true);
+    this.dialogueContainer.setVisible(false);
+    this.activeTextObject = this.textBox;
     this.textBox.setText(message);
     this.promptText.setText('點擊返回').setVisible(true);
     const handler = () => {
