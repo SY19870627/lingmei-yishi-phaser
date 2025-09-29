@@ -63,6 +63,64 @@
 }
 ```
 
+## 同行者對話互動格式
+`AiOrchestrator.genCompanionOptions` 接收靈體、同行者資訊與當前世界狀態後回傳可讓同伴開口的選項。
+
+### 輸入範例
+```json
+{
+  "spirit": {
+    "id": "spirit_wang_ayi",
+    "名": "王阿姨",
+    "年代": "民國三十五年前後",
+    "場域_anchor": "anchor_zu_cuo_hall",
+    "初始狀態": "現身",
+    "煞氣": "濁",
+    "背景": "婚後長年忍受，過世後丈夫以塑膠供品祭拜。",
+    "執念": [
+      {"id": "e_offering", "名": "別再用塑膠假食物", "條件": ["關鍵人物:npc_wang_shushu承諾真供品"], "狀態": "未解"}
+    ]
+  },
+  "companionId": "npc_wang_shushu",
+  "companionName": "王叔叔",
+  "world": {
+    "位置": "王家祖厝廳堂",
+    "煞氣": "濁",
+    "陰德": "低",
+    "同行": ["npc_wang_shushu"],
+    "物品": ["it_wang_beads"],
+    "字卡": ["w_name", "w_offering"],
+    "旗標": {},
+    "已安息靈": [],
+    "對話摘要": [],
+    "版本": 1
+  }
+}
+```
+
+### 輸出範例
+```json
+{
+  "options": [
+    {
+      "text": "王叔叔柔聲說：「我們都在，你不孤單。」",
+      "type": "安撫",
+      "targets": [],
+      "requires": [],
+      "effect": "平煞"
+    },
+    {
+      "text": "王叔叔試著問：「還有誰讓你掛念？我們可以幫忙。」",
+      "type": "提問",
+      "targets": ["e_offering"],
+      "requires": [],
+      "effect": "鬆動"
+    }
+  ],
+  "tone": "受傷但願談"
+}
+```
+
 ## Mediation 互動格式
 `StoryScene` 以 `Router.push('MediationScene', { npcId })` 呼叫調解模組，場景關閉時回傳結果。
 

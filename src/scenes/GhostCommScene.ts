@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { ModuleScene } from '@core/Router';
 import type { DataRepo } from '@core/DataRepo';
 import type { AiOrchestrator } from '@core/AiOrchestrator';
-import type { Spirit, WordCard, GhostOption } from '@core/Types';
+import type { Spirit, WordCard, GhostOption, NPC } from '@core/Types';
 import type { WorldState } from '@core/WorldState';
 import KnotTag from '@ui/KnotTag';
 import type { KnotState } from '@ui/KnotTag';
@@ -19,6 +19,11 @@ interface GhostCommResult {
 
 type ObsessionState = KnotState;
 
+interface CompanionEntry {
+  id: string;
+  name: string;
+}
+
 export default class GhostCommScene extends ModuleScene<{ spiritId: string }, GhostCommResult> {
   private repo?: DataRepo;
   private world?: WorldState;
@@ -26,6 +31,7 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
 
   private spirit?: Spirit;
   private wordCards: WordCard[] = [];
+  private companions: CompanionEntry[] = [];
 
   private statusText?: Phaser.GameObjects.Text;
   private optionContainer?: Phaser.GameObjects.Container;
@@ -64,9 +70,10 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
     }
 
     try {
-      const [spirits, wordcards] = await Promise.all([
+      const [spirits, wordcards, npcs] = await Promise.all([
         this.repo.get<Spirit[]>('spirits'),
-        this.repo.get<WordCard[]>('wordcards')
+        this.repo.get<WordCard[]>('wordcards'),
+        this.repo.get<NPC[]>('npcs')
       ]);
 
       this.spirit = spirits.find((sp) => sp.id === spiritId);
@@ -78,6 +85,7 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
       this.initializeObsessionState();
 
       this.wordCards = wordcards;
+      this.companions = this.buildCompanionEntries(npcs, spirits);
       this.buildLayout();
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -88,6 +96,7 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
   private resetState() {
     this.spirit = undefined;
     this.wordCards = [];
+    this.companions = [];
     this.statusText = undefined;
     this.optionContainer = undefined;
     this.optionList = undefined;
@@ -154,6 +163,7 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
 
     this.buildObsessionTags();
     this.buildWordCardList(width);
+    this.buildCompanionList(width);
     this.buildOptionsPanel(width, height);
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.handleSceneShutdown, this);
@@ -233,6 +243,51 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
     }
   }
 
+  private getCompanionListTop() {
+    const baseTop = 80;
+    const rowHeight = 48;
+    const totalRows = Math.max(6, this.wordCards.length);
+    return baseTop + totalRows * rowHeight + 48;
+  }
+
+  private buildCompanionList(width: number) {
+    const listX = width - 220;
+    const listTop = this.getCompanionListTop();
+
+    this.add
+      .text(listX, listTop, '同行者', {
+        fontSize: '22px',
+        color: '#fff'
+      })
+      .setOrigin(0.5, 0);
+
+    if (!this.companions.length) {
+      this.add
+        .text(listX, listTop + 36, '目前沒有同行者', {
+          fontSize: '18px',
+          color: '#666'
+        })
+        .setOrigin(0.5, 0);
+      return;
+    }
+
+    const rowHeight = 40;
+
+    this.companions.forEach((companion, index) => {
+      const text = this.add
+        .text(listX, listTop + 36 + index * rowHeight, companion.name, {
+          fontSize: '20px',
+          color: '#aaf'
+        })
+        .setOrigin(0.5, 0)
+        .setInteractive({ useHandCursor: true });
+
+      text.on('pointerup', () => {
+        this.handleCompanionSelected(companion);
+      });
+    });
+  }
+
   private buildOptionsPanel(width: number, height: number) {
     const panelX = width * 0.6;
     const panelWidth = width * 0.3;
@@ -265,7 +320,7 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
       }
     });
     this.optionContainer.add(this.optionList.container);
-    this.optionList.setMessage(['請選擇右側字卡']);
+    this.optionList.setMessage(['請選擇右側字卡或同行者']);
   }
 
   private async handleWordCardSelected(card: WordCard) {
@@ -280,7 +335,7 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
 
     try {
       const stepIndex = this.getConversationStep();
-      const seed = this.buildSeedString(stepIndex);
+      const seed = this.buildSeedString(stepIndex, `word:${card.id}`);
       const { options } = await this.aio.genGhostOptions({
         spirit: this.spirit,
         word: card,
@@ -291,7 +346,7 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
       if (!options.length) {
         this.setOptionsText(['目前沒有可用選項。']);
       } else {
-        this.populateOptions(options.map((option) => ({ card, option })));
+        this.populateOptions(options.map((option) => ({ option })));
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -301,7 +356,41 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
     }
   }
 
-  private populateOptions(entries: { card: WordCard; option: GhostOption }[]) {
+  private async handleCompanionSelected(companion: CompanionEntry) {
+    if (!this.aio || !this.spirit || !this.world || this.loadingOptions) {
+      return;
+    }
+    this.loadingOptions = true;
+    this.consecutiveAccusations = 0;
+    this.lastAccusationKey = undefined;
+
+    this.setOptionsText(['載入選項中……']);
+
+    try {
+      const stepIndex = this.getConversationStep();
+      const seed = this.buildSeedString(stepIndex, `companion:${companion.id}`);
+      const { options } = await this.aio.genCompanionOptions({
+        spirit: this.spirit,
+        companionId: companion.id,
+        companionName: companion.name,
+        world: this.world.data,
+        seed
+      });
+
+      if (!options.length) {
+        this.setOptionsText(['目前沒有可用選項。']);
+      } else {
+        this.populateOptions(options.map((option) => ({ option })));
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.setOptionsText([`取得選項失敗：${message}`]);
+    } finally {
+      this.loadingOptions = false;
+    }
+  }
+
+  private populateOptions(entries: { option: GhostOption }[]) {
     if (!this.optionList) {
       return;
     }
@@ -397,6 +486,29 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
     this.statusText?.setText(this.getStatusSummary());
   }
 
+  private buildCompanionEntries(npcs: NPC[], spirits: Spirit[]): CompanionEntry[] {
+    if (!this.world) {
+      return [];
+    }
+    const ids = Array.from(new Set(this.world.data.同行 ?? []));
+    if (!ids.length) {
+      return [];
+    }
+
+    const names = new Map<string, string>();
+    npcs.forEach((npc) => {
+      names.set(npc.id, npc.稱呼 ?? npc.id);
+    });
+    spirits.forEach((spirit) => {
+      names.set(spirit.id, spirit.名 ?? spirit.id);
+    });
+
+    return ids.map((id) => ({
+      id,
+      name: names.get(id) ?? id
+    }));
+  }
+
   private getConversationStep(): number {
     const key = this.getStepFlagKey();
     if (!key || !this.world) {
@@ -430,7 +542,7 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
     return this.cachedStepKey;
   }
 
-  private buildSeedString(stepIndex: number): string {
+  private buildSeedString(stepIndex: number, variantKey = ''): string {
     const spiritId = this.spirit?.id ?? '';
     const snapshot = this.buildKeyFlagSnapshot();
     const sortedKeys = Object.keys(snapshot).sort();
@@ -439,7 +551,7 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
       ordered[key] = snapshot[key];
     });
     const flagsJson = JSON.stringify(ordered);
-    return `${spiritId}|${stepIndex}|${flagsJson}`;
+    return `${spiritId}|${stepIndex}|${flagsJson}|${variantKey}`;
   }
 
   private buildKeyFlagSnapshot(): Record<string, unknown> {

@@ -24,8 +24,9 @@
      5. `CALL_MEDIATION`：若 `GhostCommScene` 回傳 `needPerson` 或故事腳本含 `CALL_MEDIATION`，以 `Router.push('MediationScene', { npcId })` 啟動調解。
      6. `END`：全部步驟完成後呼叫 `done({ flagsUpdated })`，回傳更新的旗標陣列。
 7. **GhostCommScene 運行**：
-   - 讀取 `spirits.json`、`wordcards.json`，建立介面。
+   - 讀取 `spirits.json`、`wordcards.json`、`npcs.json`，建立介面。
    - 玩家挑選字卡時，呼叫 `AiOrchestrator.genGhostOptions({ spirit, word, world })` 取得選項。
+   - 若有同行者，也可點選同伴，呼叫 `AiOrchestrator.genCompanionOptions({ spirit, companionId, companionName, world })` 取得對話選項。
    - 套用選項後透過 `done({ resolvedKnots, miasma, needPerson })` 回傳資訊。
 8. **MediationScene 運行**：
    - 讀取 `npcs.json`，依 NPC 自訂 `轉折階段` 建立階段流程。

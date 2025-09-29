@@ -11,6 +11,14 @@ export interface GhostOptionContext {
   seed?: string;
 }
 
+export interface CompanionDialogueContext {
+  spirit: Spirit;
+  companionId: string;
+  companionName: string;
+  world: WorldStateData;
+  seed?: string;
+}
+
 export class AiOrchestrator {
   mode: 'local' | 'provider' = 'local';
   private readonly settings?: GameSettings;
@@ -31,6 +39,22 @@ export class AiOrchestrator {
     const random = this.createRandom(seed ?? '');
     const tone = this.pickTone(random);
     const options = this.buildLocalOptions(random);
+
+    return { options, tone };
+  }
+
+  async genCompanionOptions(
+    context: CompanionDialogueContext
+  ): Promise<{ options: GhostOption[]; tone: string }> {
+    const { seed } = context;
+    if (this.mode === 'provider') {
+      const response = await this.providerAdapter.requestChatJSON({ mode: 'companion', ...context });
+      return response as { options: GhostOption[]; tone: string };
+    }
+
+    const random = this.createRandom(seed ?? '');
+    const tone = this.pickTone(random);
+    const options = this.buildCompanionLocalOptions(context, random);
 
     return { options, tone };
   }
@@ -82,6 +106,62 @@ export class AiOrchestrator {
         targets: [],
         requires: ['it_wang_beads'],
         effect: '平煞'
+      }
+    ];
+
+    const options = variants.map((variant) => {
+      const pool = soften && variant.softenTextVariants?.length ? variant.softenTextVariants : variant.textVariants;
+      const choice = Math.floor(random() * pool.length);
+      const text = pool[Math.max(0, Math.min(choice, pool.length - 1))];
+      const { textVariants: _ignored, ...rest } = variant;
+      const { softenTextVariants: _ignoredSoft, ...base } = rest;
+      return { ...base, text } satisfies GhostOption;
+    });
+
+    return this.shuffle(options, random);
+  }
+
+  private buildCompanionLocalOptions(
+    context: CompanionDialogueContext,
+    random: RandomGenerator
+  ): GhostOption[] {
+    const soften = this.settings?.isSoftLanguageEnabled() ?? false;
+    const { companionName, spirit } = context;
+    const firstObsession = spirit.執念?.[0]?.id;
+    const variants: Array<
+      Omit<GhostOption, 'text'> & { textVariants: string[]; softenTextVariants?: string[] }
+    > = [
+      {
+        textVariants: [
+          `${companionName}柔聲說：「我們都在，你不孤單。」`,
+          `${companionName}替你守在這裡，請慢慢說。`,
+          `${companionName}走上前，想安穩你的心。`
+        ],
+        softenTextVariants: [
+          `${companionName}輕聲地說：「我們都在，慢慢來就好。」`,
+          `${companionName}陪著你，語氣柔和地請你安心。`,
+          `${companionName}握著你的手說：「我們會一直在這。」`
+        ],
+        type: '安撫',
+        targets: [],
+        requires: [],
+        effect: '平煞'
+      },
+      {
+        textVariants: [
+          `${companionName}試著問：「還有誰讓你掛念？我們可以幫忙。」`,
+          `${companionName}向你追問想牽掛的人。`,
+          `${companionName}耐心詢問你心裡最重的那道結。`
+        ],
+        softenTextVariants: [
+          `${companionName}溫柔地問：「你最放不下的是誰？我們一起想辦法。」`,
+          `${companionName}輕聲詢問，想知道你牽掛的心事。`,
+          `${companionName}坐在你身旁，細細問著哪個心結最痛。`
+        ],
+        type: '提問',
+        targets: firstObsession ? [firstObsession] : [],
+        requires: [],
+        effect: '鬆動'
       }
     ];
 
