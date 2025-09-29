@@ -13,7 +13,7 @@ export interface NPC { id:string; 稱呼:string; 性格:string[]; 避雷:string[
 export interface StoryService { spiritId:string; triggerLine:number; }
 export interface StoryNode {
   id:string; anchor:string; service?:StoryService;
-  steps:( {t:"TEXT"; who:"旁白"|"亡魂"|"NPC"|"玩家"; text:string; lineId?:string; updates?:string[]}
+  steps:( {t:"TEXT"; who:"旁白"|"亡魂"|"NPC"|"玩家"; text:string; lineId?:string; updates?:string[]; display?:"AUTO"|"CENTER"}
         | {t:"CALL_GHOST_COMM"; spiritId:string; lineId?:string}
         | {t:"CALL_MEDIATION"; npcId:string; lineId?:string}
         | {t:"GIVE_ITEM"; itemId:string; lineId?:string}

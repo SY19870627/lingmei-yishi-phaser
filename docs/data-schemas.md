@@ -81,7 +81,7 @@
 ### StoryStep 類型摘要
 | 指令 | 必填欄位 | 選填欄位 | 用途 |
 | --- | --- | --- | --- |
-| `TEXT` | `who`、`text`、`lineId` | `updates` | 顯示角色台詞或旁白並以逐字效果呈現。 |
+| `TEXT` | `who`、`text`、`lineId` | `updates`、`display` | 顯示角色台詞或旁白並以逐字效果呈現。`display` 可設定為 `"CENTER"` 讓文字直接置中顯示。 |
 | `SCREEN_EFFECT` | `effectId` | `duration`、`color`、`lineId` | 觸發畫面特效（淡入、淡出、震動等）。 `duration` 為秒數，`color` 覆蓋顏色字串。 |
 | `GIVE_ITEM` | `itemId` | `message`、`lineId` | 將物品加入玩家道具欄並提示訊息。 |
 | `UPDATE_FLAG` | `flag`、`value` | `lineId` | 直接修改世界旗標。 |
