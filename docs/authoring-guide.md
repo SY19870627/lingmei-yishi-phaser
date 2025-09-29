@@ -39,17 +39,16 @@
      - `TEXT`：一般敘事，需含 `who`（說話者）與 `text`（內容），並必填唯一的 `lineId` 方便跳轉與服務定位，可選 `updates` 記錄旗標變化描述，或設定 `display` 為 `"CENTER"` 讓文字顯示於畫面中央。
       - `SCREEN_EFFECT`：呼叫畫面特效，例如淡入淡出或震動。需提供 `effectId`（對應 `StoryScene` 內註冊的效果）、可選的 `duration`（秒）與 `color`（覆蓋顏色，如 `#000000`），並建議附上 `lineId` 方便追蹤。
       - `CALL_GHOST_COMM`：啟動亡魂交談，需提供 `spiritId`。
-      - `CALL_MEDIATION`：呼叫凡人協調，需提供 `npcId`。
       - `GIVE_ITEM`：給予物品，需提供 `itemId` 與可選的 `message` 提示。
       - `UPDATE_FLAG`：直接修改旗標，需提供 `flag` 與 `value`。
      - `CHOICE`：提供多個分支選項，需給每個選項 `text`（顯示文字）與對應動作：
        - `GOTO_LINE`：跳轉到同劇情中指定的 `targetLineId`。
-       - `CALL_GHOST_COMM`／`CALL_MEDIATION`：立即進入亡魂談判或調解，完成後會自動跳至 `nextLineId`（若有設定）。
+       - `CALL_GHOST_COMM`：立即進入亡魂談判，完成後會自動跳至 `nextLineId`（若有設定）。
        - `START_STORY`：串接到另一段劇情，通常會立即結束當前故事。
        - `END`：結束當前劇情流程。
       - `nextLineId` 可搭配任一動作用於指定後續銜接的段落。
      - `END`：結束本段劇情。
-3. 確保故事內容與亡魂／錨點設定一致，並檢查 `steps` 中引用的 `itemId`、`spiritId`、`npcId` 已存在於對應資料檔。
+3. 確保故事內容與亡魂／錨點設定一致，並檢查 `steps` 中引用的 `itemId`、`spiritId` 已存在於對應資料檔。
 
 ### SCREEN_EFFECT 使用建議
 - `effectId` 目前支援 `"fade_in"`、`"fade_out"`、`"shake"` 等程式內建效果，可在 `StoryScene` 的 `screenEffects` 映射中擴充自訂動畫。
@@ -70,4 +69,4 @@
 1. 先規劃亡魂故事，確定相關 Anchor 與 Story 節點需求。
 2. 依序編輯 `spirits.json`、`anchors.json`、`stories.json`，保持 `id` 與引用一致。
 3. 編輯完成後執行 `npm run lint:data`，確定無錯誤（重複唯一性鍵、JSON 格式、背景相似度等）。
-4. 若有其他資料檔（如 NPC、物品、字卡）相關引用，也請同步更新，以免在遊戲中出現缺漏。
+4. 若有其他資料檔（如物品、字卡）相關引用，也請同步更新，以免在遊戲中出現缺漏。

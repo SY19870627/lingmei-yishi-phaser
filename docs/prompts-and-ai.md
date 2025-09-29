@@ -28,7 +28,6 @@
     "位置": "王家祖厝廳堂",
     "煞氣": "濁",
     "陰德": "低",
-    "同行": [],
     "物品": ["it_wang_beads"],
     "字卡": ["w_name", "w_offering"],
     "旗標": {},
@@ -62,27 +61,6 @@
   "tone": "受傷但願談"
 }
 ```
-
-## Mediation 互動格式
-`StoryScene` 以 `Router.push('MediationScene', { npcId })` 呼叫調解模組，場景關閉時回傳結果。
-
-### 輸入範例
-```json
-{
-  "npcId": "npc_wang_shushu"
-}
-```
-
-### 輸出範例
-```json
-{
-  "npcId": "npc_wang_shushu",
-  "stage": "承諾",
-  "resolved": ["e_offering", "e_apology"]
-}
-```
-
-`stage` 為 NPC 最終所處的轉折階段，`resolved` 為成功解決的執念 id；`StoryScene` 會據此更新 `WorldState` 旗標與靈體狀態。
 
 ## 可重現性
 本機 `AiOrchestrator` 會依據 `contextSeed` 產生亂數來源，讓同一輪溝通在重讀存檔後仍能得到一致的選項排序與措辭。`contextSeed` 由下列資訊串接而成：

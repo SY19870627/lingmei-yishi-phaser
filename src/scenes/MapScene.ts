@@ -3,7 +3,7 @@ import { ModuleScene, Router } from '@core/Router';
 import { DataRepo } from '@core/DataRepo';
 import { WorldState } from '@core/WorldState';
 import { SpawnDirector, type DirectedAnchor } from '@core/SpawnDirector';
-import type { Anchor, MapDef, NPC, Spirit, StoryNode } from '@core/Types';
+import type { Anchor, MapDef, Spirit, StoryNode } from '@core/Types';
 import MapArt from '@ui/MapArt';
 import { GhostDirector } from '@core/GhostDirector';
 import HintsManager from '@core/HintsManager';
@@ -17,7 +17,6 @@ export default class MapScene extends ModuleScene {
   private anchors: Anchor[] = [];
   private stories: StoryNode[] = [];
   private spirits: Spirit[] = [];
-  private companionNames = new Map<string, string>();
   private currentLocation = '未知';
   private statusLabel?: Phaser.GameObjects.Text;
   private messageLabel?: Phaser.GameObjects.Text;
@@ -111,17 +110,15 @@ export default class MapScene extends ModuleScene {
     }
 
     try {
-      const [anchors, stories, npcs, spirits, maps] = await Promise.all([
+      const [anchors, stories, spirits, maps] = await Promise.all([
         repo.get<Anchor[]>('anchors'),
         repo.get<StoryNode[]>('stories'),
-        repo.get<NPC[]>('npcs'),
         repo.get<Spirit[]>('spirits'),
         repo.get<MapDef[]>('maps')
       ]);
       this.anchors = anchors;
       this.stories = stories;
       this.spirits = spirits;
-      this.buildCompanionNames(npcs, spirits);
       this.mapArt?.setMaps(maps);
       this.refreshMapState();
     } catch (error) {
@@ -197,11 +194,6 @@ export default class MapScene extends ModuleScene {
     const destination = anchor.地點;
     if (destination === this.currentLocation) {
       this.showMessage('已在此地');
-      return;
-    }
-
-    if (!this.canEnterLocation(destination)) {
-      this.showMessage('同行者不願進入');
       return;
     }
 
@@ -386,11 +378,7 @@ export default class MapScene extends ModuleScene {
     if (!this.statusLabel) {
       return;
     }
-    const companions = this.world?.data?.同行 ?? [];
-    const companionText = companions.length
-      ? companions.map((id) => this.getCompanionName(id)).join('、')
-      : '目前沒有同行者';
-    this.statusLabel.setText(`當前位置：${this.currentLocation}\n同行者：${companionText}`);
+    this.statusLabel.setText(`當前位置：${this.currentLocation}`);
   }
 
   private showMessage(message: string) {
@@ -406,26 +394,6 @@ export default class MapScene extends ModuleScene {
         this.messageLabel.setText('');
       }
     });
-  }
-
-  private buildCompanionNames(npcs: NPC[], spirits: Spirit[]) {
-    this.companionNames.clear();
-    npcs.forEach((npc) => {
-      this.companionNames.set(npc.id, npc.稱呼 ?? npc.id);
-    });
-    spirits.forEach((spirit) => {
-      this.companionNames.set(spirit.id, spirit.名 ?? spirit.id);
-    });
-  }
-
-  private getCompanionName(id: string): string {
-    return this.companionNames.get(id) ?? id;
-  }
-
-  private canEnterLocation(_locationName: string): boolean {
-    // 先用假條件：只有地點名稱包含「廳堂」時視為同行者願意進入。
-    //return locationName.includes('廳堂');
-    return true;
   }
 
   private isStoryFinished(story: StoryNode): boolean {

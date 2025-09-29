@@ -5,7 +5,6 @@ import ShellScene from './scenes/ShellScene';
 import MapScene from './scenes/MapScene';
 import StoryScene from './scenes/StoryScene';
 import GhostCommScene from './scenes/GhostCommScene';
-import MediationScene from './scenes/MediationScene';
 import InventoryScene from './scenes/InventoryScene';
 import WordCardsScene from './scenes/WordCardsScene';
 import HintsScene from './scenes/HintsScene';
@@ -19,7 +18,7 @@ const config: Phaser.Types.Core.GameConfig = {
   scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH, width: 1280, height: 720 },
   scene: [
     BootScene, TitleScene, ShellScene, MapScene,
-    StoryScene, GhostCommScene, MediationScene,
+    StoryScene, GhostCommScene,
     InventoryScene, WordCardsScene, HintsScene,
     SettingsScene,
     LoadScene

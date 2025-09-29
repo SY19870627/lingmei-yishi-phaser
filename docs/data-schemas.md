@@ -60,23 +60,12 @@
 | `id` | `string` | 地圖定義 id。 |
 | `image` | `string` | 地圖縮略圖資源路徑。 |
 
-## NPC
-| 欄位 | 型別 | 說明 |
-| --- | --- | --- |
-| `id` | `string` | NPC 代號。 |
-| `稱呼` | `string` | NPC 稱呼。 |
-| `性格` | `string[]` | 個性特質。 |
-| `避雷` | `string[]` | 禁忌或需避免的話題。 |
-| `轉折階段` | `("抗拒"\|"猶豫"\|"願試"\|"承諾")[]` | 調解時的階段流程。 |
-| `可被說動的點` | `string[]` | 說服切入點。 |
-| `到場條件` | `string[]` | NPC 出現需求。 |
-
 ## StoryNode
 | 欄位 | 型別 | 說明 |
 | --- | --- | --- |
 | `id` | `string` | 劇情節點代號。 |
 | `anchor` | `string` | 所屬錨點 id。 |
-| `steps` | `StoryStep[]` | 劇情步驟陣列。每一句 `TEXT` 對白都必須填寫唯一的 `lineId` 以供跳轉與服務判斷。`StoryStep` 支援：`TEXT`、`SCREEN_EFFECT`、`GIVE_ITEM`、`UPDATE_FLAG`、`CALL_GHOST_COMM`、`CALL_MEDIATION`、`CHOICE`、`END`。 |
+| `steps` | `StoryStep[]` | 劇情步驟陣列。每一句 `TEXT` 對白都必須填寫唯一的 `lineId` 以供跳轉與服務判斷。`StoryStep` 支援：`TEXT`、`SCREEN_EFFECT`、`GIVE_ITEM`、`UPDATE_FLAG`、`CALL_GHOST_COMM`、`CHOICE`、`END`。 |
 
 ### StoryStep 類型摘要
 | 指令 | 必填欄位 | 選填欄位 | 用途 |
@@ -86,7 +75,6 @@
 | `GIVE_ITEM` | `itemId` | `message`、`lineId` | 將物品加入玩家道具欄並提示訊息。 |
 | `UPDATE_FLAG` | `flag`、`value` | `lineId` | 直接修改世界旗標。 |
 | `CALL_GHOST_COMM` | `spiritId` | `lineId` | 進入亡魂交談模組。 |
-| `CALL_MEDIATION` | `npcId` | `lineId` | 進入調解模組。 |
 | `CHOICE` | `lineId`、`options[]` | `options[].nextLineId` | 顯示多選分支，可跳轉行或觸發其他場景。 |
 | `END` | - | `lineId` | 結束故事步驟。 |
 
@@ -106,7 +94,6 @@
 | `位置` | `string` | 玩家所在位置。 |
 | `煞氣` | `Miasma` | 當前場域煞氣。 |
 | `陰德` | `"低"\|"中"\|"高"` | 靈媒陰德評級。 |
-| `同行` | `string[]` | 同行角色 id。 |
 | `物品` | `string[]` | 已持有物品 id。 |
 | `字卡` | `string[]` | 已取得字卡 id。 |
 | `旗標` | `Record<string, any>` | 任務旗標與提示。 |
@@ -117,8 +104,7 @@
 ## JSON Schema 檔案對照
 - `schemas/sacred-item.schema.json`：`SacredItem` 的 `id`、`名`、`來源`、`用途`、`鉤子`。
 - `schemas/wordcard.schema.json`：`WordCard` 的 `id`、`字`、`標籤`、`備註`。
-- `schemas/npc.schema.json`：`NPC` 的 `id`、`稱呼`、`性格`、`避雷`、`轉折階段`、`可被說動的點`、`到場條件`、`習慣用語`。
 - `schemas/spirit.schema.json`：`Spirit` 的 `id`、`名稱`、`年代`、`場域_anchor`、`初始狀態`、`煞氣`、`背景`、`執念`、`特例`、`限制`。
 - `schemas/anchor.schema.json`：`Anchor` 的 `id`、`地點`、`條件`、`完成後`。
 - `schemas/map.schema.json`：`MapDef` 的 `id`、`image`。
-- `schemas/story.schema.json`：`StoryNode` 的 `id`、`anchor`、`service` 與各類 `steps` 類型（`TEXT`、`SCREEN_EFFECT`、`CALL_GHOST_COMM`、`CALL_MEDIATION`、`GIVE_ITEM`、`UPDATE_FLAG`、`CHOICE`、`END`）。
+- `schemas/story.schema.json`：`StoryNode` 的 `id`、`anchor`、`service` 與各類 `steps` 類型（`TEXT`、`SCREEN_EFFECT`、`CALL_GHOST_COMM`、`GIVE_ITEM`、`UPDATE_FLAG`、`CHOICE`、`END`）。

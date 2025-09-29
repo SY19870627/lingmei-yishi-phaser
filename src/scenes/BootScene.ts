@@ -21,7 +21,6 @@ export default class BootScene extends Phaser.Scene {
     const datasets = [
       { schema: 'sacred-item' as const, file: 'items', label: 'items.json' },
       { schema: 'wordcard' as const, file: 'wordcards', label: 'wordcards.json' },
-      { schema: 'npc' as const, file: 'npcs', label: 'npcs.json' },
       { schema: 'spirit' as const, file: 'spirits', label: 'spirits.json' },
       { schema: 'anchor' as const, file: 'anchors', label: 'anchors.json' },
       { schema: 'map' as const, file: 'maps', label: 'maps.json' },

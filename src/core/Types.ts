@@ -9,13 +9,11 @@ export interface Spirit {
   限制?:{ 唯一性鍵:string[]; };
 }
 export interface Anchor { id:string; 地點:string; 條件:string[]; mapId?:string; 完成後?:{裝飾?:string;回聲腳本?:string;} }
-export interface NPC { id:string; 稱呼:string; 性格:string[]; 避雷:string[]; 轉折階段:("抗拒"|"猶豫"|"願試"|"承諾")[]; 可被說動的點:string[]; 到場條件:string[]; }
 export interface StoryService { spiritId:string; triggerLine:number; }
 export interface StoryNode {
   id:string; anchor:string; service?:StoryService;
   steps:( {t:"TEXT"; who:"旁白"|"亡魂"|"NPC"|"玩家"; text:string; lineId?:string; updates?:string[]; display?:"AUTO"|"CENTER"}
         | {t:"CALL_GHOST_COMM"; spiritId:string; lineId?:string}
-        | {t:"CALL_MEDIATION"; npcId:string; lineId?:string}
         | {t:"GIVE_ITEM"; itemId:string; lineId?:string}
         | {t:"UPDATE_FLAG"; flag:string; value:any; lineId?:string}
         | {t:"SCREEN_EFFECT"; effectId:string; duration?:number; color?:string; lineId?:string}
@@ -24,7 +22,6 @@ export interface StoryNode {
               {action:"GOTO_LINE"; text:string; targetLineId:string; nextLineId?:string}
             | {action:"START_STORY"; text:string; storyId:string; nextLineId?:string}
             | {action:"CALL_GHOST_COMM"; text:string; spiritId:string; nextLineId?:string}
-            | {action:"CALL_MEDIATION"; text:string; npcId:string; nextLineId?:string}
             | {action:"END"; text:string; nextLineId?:string}
           )[] } )[];
 }
@@ -33,7 +30,7 @@ export interface GhostOption {
   targets:string[]; requires:string[]; effect:"解結"|"鬆動"|"平煞"|"條件交換"|"觸怒"; hint?:string;
 }
 export interface WorldStateData {
-  位置:string; 煞氣:Miasma; 陰德:"低"|"中"|"高"; 同行:string[]; 物品:string[]; 字卡:string[];
+  位置:string; 煞氣:Miasma; 陰德:"低"|"中"|"高"; 物品:string[]; 字卡:string[];
   旗標:Record<string,any>; 已安息靈:string[]; 對話摘要:string[]; 版本:number;
 }
 export interface MapDef { id:string; image:string; }
