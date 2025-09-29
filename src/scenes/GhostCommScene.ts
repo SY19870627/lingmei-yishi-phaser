@@ -134,6 +134,8 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
     const { width, height } = this.scale;
 
     this.buildHeader();
+    this.buildObsessionTags();
+    this.buildFooter();
 
     this.dialogueBox = new DialogueBox(this, width / 2 - 340, height - 220, {
       width: 680,
@@ -145,16 +147,18 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
     });
     this.dialogueBox.setText('請選擇卡牌與靈體交涉。');
 
-    const dialogueTop = this.dialogueBox.container.y;
-
-    this.cardBoard = new CardBoard<CardChoiceData>(this, width / 2, dialogueTop - 120, {
-      cardWidth: 220,
-      cardHeight: 80,
-      cardSpacing: 52,
-      titleFontSize: '30px'
-    });
-    const boardHeight = this.cardBoard.getHeight();
-    this.cardBoard.container.setY(dialogueTop - boardHeight / 2);
+    this.cardBoard = new CardBoard<CardChoiceData>(
+      this,
+      width / 2,
+      this.footerButtons!.wordcard.y - 180,
+      {
+        cardWidth: 220,
+        cardHeight: 80,
+        cardSpacing: 52,
+        titleFontSize: '30px'
+      }
+    );
+    this.cardBoard.container.setVisible(false);
     this.cardBoard.on('select', this.handleCardBoardSelection, this);
     this.cardBoard.on('pagechange', (pageIndex: number) => {
       if (this.boardMode === 'wordcard') {
@@ -162,6 +166,19 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
       } else if (this.boardMode === 'item') {
         this.itemPage = pageIndex;
       }
+    });
+
+    const dialogueTop = this.dialogueBox.container.y;
+
+    const closeButton = this.add
+      .text(width - 36, 32, '✕', {
+        fontSize: '32px',
+        color: '#f3e3c2'
+      })
+      .setOrigin(1, 0)
+      .setInteractive({ useHandCursor: true });
+    closeButton.on('pointerup', () => {
+      this.finish();
     });
 
     const backButtonY = dialogueTop - 12;
@@ -179,20 +196,10 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
       this.dialogueBox?.setText('請選擇卡牌與靈體交涉。');
     });
 
-    this.buildFooter();
-    const closeButton = this.add
-      .text(width - 36, 32, '✕', {
-        fontSize: '32px',
-        color: '#f3e3c2'
-      })
-      .setOrigin(1, 0)
-      .setInteractive({ useHandCursor: true });
-    closeButton.on('pointerup', () => {
-      this.finish();
-    });
-
-    this.buildObsessionTags();
     this.showWordCardChoices(true);
+    this.cardBoard?.container.setVisible(false);
+    this.footerActive = undefined;
+    this.updateFooterColors();
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.handleSceneShutdown, this);
     this.events.once(Phaser.Scenes.Events.DESTROY, this.handleSceneShutdown, this);
@@ -241,7 +248,14 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
         text: '天語',
         interactive: true,
         handler: () => {
-          if (!this.concluded) {
+          if (this.concluded) {
+            return;
+          }
+          if (this.boardMode === 'wordcard' && this.cardBoard?.container.visible) {
+            this.cardBoard.container.setVisible(false);
+            this.footerActive = undefined;
+            this.updateFooterColors();
+          } else {
             this.showWordCardChoices(false);
           }
         }
@@ -251,7 +265,14 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
         text: '物品',
         interactive: true,
         handler: () => {
-          if (!this.concluded) {
+          if (this.concluded) {
+            return;
+          }
+          if (this.boardMode === 'item' && this.cardBoard?.container.visible) {
+            this.cardBoard.container.setVisible(false);
+            this.footerActive = undefined;
+            this.updateFooterColors();
+          } else {
             this.showItemChoices(false);
           }
         }
@@ -337,6 +358,7 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
   }
 
   private showWordCardChoices(resetPage: boolean) {
+    this.cardBoard?.container.setVisible(true);
     if (!this.cardBoard) {
       return;
     }
@@ -377,6 +399,7 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
   }
 
   private showItemChoices(resetPage: boolean) {
+    this.cardBoard?.container.setVisible(true);
     if (!this.cardBoard) {
       return;
     }
@@ -733,6 +756,7 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
   }
 
   private finish() {
+    this.cardBoard?.container.setVisible(false);
     this.finalizeCommunication();
   }
 
