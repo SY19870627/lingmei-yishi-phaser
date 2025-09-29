@@ -40,6 +40,10 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
   private miasmaText?: Phaser.GameObjects.Text;
   private dialogueBox?: DialogueBox;
   private cardBoard?: CardBoard<CardChoiceData>;
+  private optionListContainer?: Phaser.GameObjects.Container;
+  private optionListTexts: Phaser.GameObjects.Text[] = [];
+  private optionListWidth = 0;
+  private optionListHeight = 0;
   private boardMode: 'wordcard' | 'option' | 'message' | 'item' = 'wordcard';
   private backButton?: Phaser.GameObjects.Text;
 
@@ -111,6 +115,10 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
     this.miasmaText = undefined;
     this.dialogueBox = undefined;
     this.cardBoard = undefined;
+    this.optionListContainer = undefined;
+    this.optionListTexts = [];
+    this.optionListWidth = 0;
+    this.optionListHeight = 0;
     this.boardMode = 'wordcard';
     this.backButton = undefined;
     this.obsessionState.clear();
@@ -155,6 +163,20 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
     });
     const boardHeight = this.cardBoard.getHeight();
     this.cardBoard.container.setY(dialogueTop - boardHeight / 2);
+
+    const boardBackground = this.cardBoard.container.list.find(
+      (child): child is Phaser.GameObjects.Rectangle => child instanceof Phaser.GameObjects.Rectangle
+    );
+    this.optionListWidth = boardBackground?.width ?? 836;
+    this.optionListHeight = boardBackground?.height ?? boardHeight;
+    this.optionListContainer = this.add.container(this.cardBoard.container.x, this.cardBoard.container.y);
+    const optionBackground = this.add
+      .rectangle(0, 0, this.optionListWidth, this.optionListHeight, 0x0c0a08, 0.4)
+      .setOrigin(0.5, 0.5);
+    this.optionListContainer.add(optionBackground);
+    this.optionListContainer.setDepth(this.cardBoard.container.depth);
+    this.optionListContainer.setVisible(false);
+
     this.cardBoard.on('select', this.handleCardBoardSelection, this);
     this.cardBoard.on('pagechange', (pageIndex: number) => {
       if (this.boardMode === 'wordcard') {
@@ -180,17 +202,6 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
     });
 
     this.buildFooter();
-    const closeButton = this.add
-      .text(width - 36, 32, '✕', {
-        fontSize: '32px',
-        color: '#f3e3c2'
-      })
-      .setOrigin(1, 0)
-      .setInteractive({ useHandCursor: true });
-    closeButton.on('pointerup', () => {
-      this.finish();
-    });
-
     this.buildObsessionTags();
     this.showWordCardChoices(true);
 
@@ -341,6 +352,8 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
       return;
     }
 
+    this.cardBoard.container.setVisible(true);
+    this.hideOptionList();
     this.setFooterActive('wordcard');
 
     if (!this.wordCards.length) {
@@ -381,6 +394,8 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
       return;
     }
 
+    this.cardBoard.container.setVisible(true);
+    this.hideOptionList();
     this.setFooterActive('item');
 
     if (!this.inventoryItems.length) {
@@ -424,9 +439,73 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
     if (!this.cardBoard) {
       return;
     }
+    this.cardBoard.container.setVisible(true);
+    this.hideOptionList();
     this.cardBoard.setMessage(message);
     this.boardMode = 'message';
     this.backButton?.setVisible(showBackButton);
+  }
+
+  private hideOptionList() {
+    if (this.optionListTexts.length) {
+      this.optionListTexts.forEach((text) => {
+        text.destroy();
+      });
+      this.optionListTexts = [];
+    }
+    this.optionListContainer?.setVisible(false);
+  }
+
+  private showOptionList(entries: { card: WordCard; option: GhostOption }[]) {
+    const optionContainer = this.optionListContainer;
+    const cardBoard = this.cardBoard;
+    if (!optionContainer || !cardBoard) {
+      return;
+    }
+
+    this.hideOptionList();
+    cardBoard.container.setVisible(false);
+
+    const width = this.optionListWidth || 836;
+    const height = this.optionListHeight || cardBoard.getHeight();
+    const paddingX = 48;
+    const paddingY = 28;
+    const lineSpacing = 18;
+    const baseColor = '#f3e3c2';
+    const hoverColor = '#ffe8b5';
+
+    let currentY = -height / 2 + paddingY;
+
+    entries.forEach(({ option }) => {
+      const rawText = String(option.text ?? '').trim();
+      const displayText = rawText.length ? rawText : '（無內容）';
+      const textObject = this.add
+        .text(-width / 2 + paddingX, currentY, displayText, {
+          fontSize: '22px',
+          color: baseColor,
+          wordWrap: { width: width - paddingX * 2 },
+          align: 'left'
+        })
+        .setOrigin(0, 0)
+        .setInteractive({ useHandCursor: true });
+      textObject.setLineSpacing(6);
+      textObject.on('pointerover', () => {
+        textObject.setColor(hoverColor);
+      });
+      textObject.on('pointerout', () => {
+        textObject.setColor(baseColor);
+      });
+      textObject.on('pointerup', () => {
+        this.applyOption(option);
+      });
+
+      optionContainer.add(textObject);
+      this.optionListTexts.push(textObject);
+      currentY += textObject.height + lineSpacing;
+    });
+
+    optionContainer.setPosition(cardBoard.container.x, cardBoard.container.y);
+    optionContainer.setVisible(true);
   }
 
   private handleCardBoardSelection(item: CardBoardItem<CardChoiceData>) {
@@ -452,17 +531,6 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
     this.dialogueBox?.setText(lines.join('\n'));
   }
 
-  private buildOptionDescription(option: GhostOption) {
-    const parts: string[] = [];
-    if (option.effect) {
-      parts.push(`效果：${option.effect}`);
-    }
-    if (option.type) {
-      parts.push(`類型：${option.type}`);
-    }
-    return parts.join('\n');
-  }
-
   private initializeObsessionState() {
     if (!this.spirit) {
       return;
@@ -483,11 +551,11 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
     }
 
     const listX = 32;
-    const listTop = 150;
+    const listTop = 200;
     const spacing = 52;
 
     this.add
-      .text(listX, 128, '她的執念', {
+      .text(listX, 160, '她的執念', {
         fontSize: '22px',
         color: '#f3e3c2'
       })
@@ -552,15 +620,8 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
       return;
     }
 
-    const items: CardBoardItem<CardChoiceData>[] = entries.map(({ card, option }, index) => ({
-      id: `${card.id ?? 'card'}-${index}`,
-      title: this.fitOptionText(String(option.text ?? '選項'), 36),
-      description: this.buildOptionDescription(option),
-      data: { kind: 'option', option }
-    }));
-
     this.boardMode = 'option';
-    this.cardBoard.setItems(items, true);
+    this.showOptionList(entries);
     this.backButton?.setVisible(true);
     this.dialogueBox?.setText('選擇要說的話。');
   }
@@ -634,6 +695,7 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
 
     this.updateMiasmaText();
 
+    const optionText = String(option.text ?? '').trim();
     const summaryParts: string[] = [];
     if (effect) {
       summaryParts.push(`效果：${effect}`);
@@ -642,7 +704,17 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
       summaryParts.push(`影響執念：${this.describeTargets(option.targets)}`);
     }
     const summary = summaryParts.length ? summaryParts.join('\n') : '她靜靜地看著你。';
-    this.dialogueBox?.setText(summary);
+    const dialogueLines: string[] = [];
+    if (optionText) {
+      dialogueLines.push(optionText);
+    }
+    if (summary) {
+      if (dialogueLines.length) {
+        dialogueLines.push('');
+      }
+      dialogueLines.push(summary);
+    }
+    this.dialogueBox?.setText(dialogueLines.join('\n'));
     this.showWordCardChoices(false);
   }
 
@@ -723,13 +795,6 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
     this.time.delayedCall(400, () => {
       this.finalizeCommunication({ needPerson });
     });
-  }
-
-  private fitOptionText(text: string, maxLength: number) {
-    if (text.length <= maxLength) {
-      return text;
-    }
-    return `${text.slice(0, maxLength - 1)}…`;
   }
 
   private finish() {
@@ -822,6 +887,12 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
   private handleSceneShutdown() {
     this.cardBoard?.destroy();
     this.cardBoard = undefined;
+    if (this.optionListTexts.length) {
+      this.optionListTexts.forEach((text) => text.destroy());
+      this.optionListTexts = [];
+    }
+    this.optionListContainer?.destroy();
+    this.optionListContainer = undefined;
     this.dialogueBox?.destroy();
     this.dialogueBox = undefined;
   }
