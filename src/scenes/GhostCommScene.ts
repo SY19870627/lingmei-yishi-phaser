@@ -2,13 +2,13 @@ import Phaser from 'phaser';
 import { ModuleScene } from '@core/Router';
 import type { DataRepo } from '@core/DataRepo';
 import type { AiOrchestrator } from '@core/AiOrchestrator';
-import type { Spirit, WordCard, GhostOption } from '@core/Types';
+import type { Spirit, WordCard, GhostOption, SacredItem } from '@core/Types';
 import type { WorldState } from '@core/WorldState';
 import KnotTag from '@ui/KnotTag';
 import type { KnotState } from '@ui/KnotTag';
-import OptionList from '@ui/OptionList';
-import type { OptionListItem } from '@ui/OptionList';
-import MiasmaIndicator from '@ui/MiasmaIndicator';
+import DialogueBox from '@ui/DialogueBox';
+import CardBoard from '@ui/CardBoard';
+import type { CardBoardItem } from '@ui/CardBoard';
 import { GhostDirector } from '@core/GhostDirector';
 
 interface GhostCommResult {
@@ -19,6 +19,14 @@ interface GhostCommResult {
 
 type ObsessionState = KnotState;
 
+type CardChoiceData =
+  | { kind: 'wordcard'; card: WordCard }
+  | { kind: 'option'; option: GhostOption }
+  | { kind: 'item'; item: SacredItem };
+
+type FooterKey = 'wordcard' | 'item' | 'blank' | 'leave';
+type FooterMode = Extract<FooterKey, 'wordcard' | 'item'>;
+
 export default class GhostCommScene extends ModuleScene<{ spiritId: string }, GhostCommResult> {
   private repo?: DataRepo;
   private world?: WorldState;
@@ -26,21 +34,28 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
 
   private spirit?: Spirit;
   private wordCards: WordCard[] = [];
+  private sacredItems: SacredItem[] = [];
+  private inventoryItems: SacredItem[] = [];
 
-  private statusText?: Phaser.GameObjects.Text;
-  private optionContainer?: Phaser.GameObjects.Container;
-  private optionList?: OptionList<GhostOption>;
-  private feedbackText?: Phaser.GameObjects.Text;
-  private miasmaIndicator?: MiasmaIndicator;
+  private miasmaText?: Phaser.GameObjects.Text;
+  private dialogueBox?: DialogueBox;
+  private cardBoard?: CardBoard<CardChoiceData>;
+  private boardMode: 'wordcard' | 'option' | 'message' | 'item' = 'wordcard';
+  private backButton?: Phaser.GameObjects.Text;
 
   private obsessionState = new Map<string, ObsessionState>();
   private knotTags = new Map<string, KnotTag>();
   private loadingOptions = false;
+  private activeWordCard?: WordCard;
+  private wordCardPage = 0;
+  private itemPage = 0;
   private consecutiveAccusations = 0;
   private lastAccusationKey?: string;
   private concluded = false;
   private bus?: Phaser.Events.EventEmitter;
   private cachedStepKey?: string;
+  private footerButtons?: Record<FooterKey, Phaser.GameObjects.Text>;
+  private footerActive?: FooterMode;
 
   constructor() {
     super('GhostCommScene');
@@ -64,9 +79,10 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
     }
 
     try {
-      const [spirits, wordcards] = await Promise.all([
+      const [spirits, wordcards, items] = await Promise.all([
         this.repo.get<Spirit[]>('spirits'),
-        this.repo.get<WordCard[]>('wordcards')
+        this.repo.get<WordCard[]>('wordcards'),
+        this.repo.get<SacredItem[]>('items')
       ]);
 
       this.spirit = spirits.find((sp) => sp.id === spiritId);
@@ -78,6 +94,8 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
       this.initializeObsessionState();
 
       this.wordCards = wordcards;
+      this.sacredItems = items;
+      this.buildInventoryItems();
       this.buildLayout();
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -88,11 +106,13 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
   private resetState() {
     this.spirit = undefined;
     this.wordCards = [];
-    this.statusText = undefined;
-    this.optionContainer = undefined;
-    this.optionList = undefined;
-    this.feedbackText = undefined;
-    this.miasmaIndicator = undefined;
+    this.sacredItems = [];
+    this.inventoryItems = [];
+    this.miasmaText = undefined;
+    this.dialogueBox = undefined;
+    this.cardBoard = undefined;
+    this.boardMode = 'wordcard';
+    this.backButton = undefined;
     this.obsessionState.clear();
     this.knotTags.clear();
     this.loadingOptions = false;
@@ -100,6 +120,11 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
     this.lastAccusationKey = undefined;
     this.concluded = false;
     this.cachedStepKey = undefined;
+    this.activeWordCard = undefined;
+    this.wordCardPage = 0;
+    this.itemPage = 0;
+    this.footerButtons = undefined;
+    this.footerActive = undefined;
     if (this.input) {
       this.input.enabled = true;
     }
@@ -108,56 +133,366 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
   private buildLayout() {
     const { width, height } = this.scale;
 
-    this.add
-      .text(32, 32, `與 ${this.spirit?.名 ?? '未知靈體'} 溝通`, {
-        fontSize: '26px',
-        color: '#fff'
-      })
-      .setOrigin(0, 0);
+    this.buildHeader();
 
-    this.statusText = this.add
-      .text(32, 96, this.getStatusSummary(), {
-        fontSize: '18px',
-        color: '#fff',
-        lineSpacing: 6,
-        wordWrap: { width: width * 0.5 }
-      })
-      .setOrigin(0, 0);
+    this.buildObsessionTags();
+    this.buildFooter();
 
-    const indicatorX = width * 0.52;
-    this.miasmaIndicator = new MiasmaIndicator(this, indicatorX, 112, {
-      width: 220,
-      height: 130
+    this.dialogueBox = new DialogueBox(this, width / 2 - 340, height - 220, {
+      width: 680,
+      height: 190,
+      backgroundColor: 0x0b0906,
+      backgroundAlpha: 0.78,
+      fontSize: '20px',
+      textColor: '#f3e3c2'
     });
-    const currentMiasma = this.world?.data.煞氣 ?? '清';
-    this.miasmaIndicator.setMiasma(currentMiasma);
+    this.dialogueBox.setText('請選擇卡牌與靈體交涉。');
 
-    this.feedbackText = this.add
-      .text(32, height - 96, '', {
-        fontSize: '18px',
-        color: '#aaf',
-        wordWrap: { width: width * 0.5 }
-      })
-      .setOrigin(0, 0);
+    const dialogueTop = this.dialogueBox.container.y;
+    const cardBoardY = this.footerButtons!.wordcard.y - 180;
 
-    const endButton = this.add
-      .text(width / 2, height - 32, '結束溝通', {
-        fontSize: '22px',
-        color: '#aaf'
+    this.cardBoard = new CardBoard<CardChoiceData>(this, width / 2, cardBoardY, {
+      cardWidth: 220,
+      cardHeight: 80,
+      cardSpacing: 52,
+      titleFontSize: '30px'
+    });
+    this.cardBoard.on('select', this.handleCardBoardSelection, this);
+    this.cardBoard.on('pagechange', (pageIndex: number) => {
+      if (this.boardMode === 'wordcard') {
+        this.wordCardPage = pageIndex;
+      } else if (this.boardMode === 'item') {
+        this.itemPage = pageIndex;
+      }
+    });
+    this.cardBoard.container.setVisible(false);
+
+    const closeButton = this.add
+      .text(width - 36, 32, '✕', {
+        fontSize: '32px',
+        color: '#f3e3c2'
       })
-      .setOrigin(0.5, 1)
+      .setOrigin(1, 0)
       .setInteractive({ useHandCursor: true });
-
-    endButton.on('pointerup', () => {
+    closeButton.on('pointerup', () => {
       this.finish();
     });
 
-    this.buildObsessionTags();
-    this.buildWordCardList(width);
-    this.buildOptionsPanel(width, height);
+    const backButtonY = dialogueTop - 12;
+
+    this.backButton = this.add
+      .text(width / 2, backButtonY, '返回選牌', {
+        fontSize: '20px',
+        color: '#f3e3c2'
+      })
+      .setOrigin(0.5, 1)
+      .setVisible(false)
+      .setInteractive({ useHandCursor: true });
+    this.backButton.on('pointerup', () => {
+      this.showWordCardChoices(false);
+      this.dialogueBox?.setText('請選擇卡牌與靈體交涉。');
+    });
+
+    if (this.input) {
+      this.input.on('pointerdown', this.handleBackgroundPointerDown, this);
+    }
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.handleSceneShutdown, this);
     this.events.once(Phaser.Scenes.Events.DESTROY, this.handleSceneShutdown, this);
+  }
+
+  private buildHeader() {
+    const name = this.spirit?.名 ?? '未知靈體';
+    const miasma = this.world?.data.煞氣 ?? '未知';
+
+    this.add
+      .text(32, 36, name, {
+        fontSize: '34px',
+        color: '#f3e3c2',
+        fontStyle: 'bold'
+      })
+      .setOrigin(0, 0);
+
+    this.miasmaText = this.add
+      .text(32, 88, `煞氣：${miasma}`, {
+        fontSize: '22px',
+        color: '#e4cfa4'
+      })
+      .setOrigin(0, 0);
+  }
+
+  private buildInventoryItems() {
+    const carried = this.world?.data.物品 ?? [];
+    const available = carried
+      .map((id) => this.sacredItems.find((item) => item.id === id))
+      .filter((item): item is SacredItem => Boolean(item));
+    this.inventoryItems = available;
+  }
+
+  private buildFooter() {
+    const { width, height } = this.scale;
+    const baseY = height - 24;
+    const spacing = 140;
+    const entries: {
+      key: FooterKey;
+      text: string;
+      interactive: boolean;
+      handler?: () => void;
+    }[] = [
+      {
+        key: 'wordcard',
+        text: '天語',
+        interactive: true,
+        handler: () => {
+          if (this.concluded) {
+            return;
+          }
+          if (this.boardMode === 'wordcard' && this.cardBoard?.container.visible) {
+            this.hideCardBoard();
+          } else {
+            this.showWordCardChoices(false);
+          }
+        }
+      },
+      {
+        key: 'item',
+        text: '物品',
+        interactive: true,
+        handler: () => {
+          if (this.concluded) {
+            return;
+          }
+          if (this.boardMode === 'item' && this.cardBoard?.container.visible) {
+            this.hideCardBoard();
+          } else {
+            this.showItemChoices(false);
+          }
+        }
+      },
+      {
+        key: 'blank',
+        text: '空白',
+        interactive: false
+      },
+      {
+        key: 'leave',
+        text: '離開',
+        interactive: true,
+        handler: () => {
+          if (!this.concluded) {
+            this.finish();
+          }
+        }
+      }
+    ];
+
+    const startX = width / 2 - ((entries.length - 1) * spacing) / 2;
+    const buttons = {} as Record<FooterKey, Phaser.GameObjects.Text>;
+
+    entries.forEach((entry, index) => {
+      const x = startX + index * spacing;
+      const text = this.add
+        .text(x, baseY, entry.text, {
+          fontSize: '20px',
+          color: '#a89678'
+        })
+        .setOrigin(0.5, 1);
+
+      if (entry.interactive && entry.handler) {
+        text.setInteractive({ useHandCursor: true })
+          .on('pointerup', entry.handler)
+          .on('pointerover', () => {
+            if (this.footerActive !== entry.key && !this.concluded) {
+              text.setColor('#d8c7a0');
+            }
+          })
+          .on('pointerout', () => {
+            if (this.footerActive !== entry.key) {
+              text.setColor('#a89678');
+            }
+          });
+      }
+
+      buttons[entry.key] = text;
+    });
+
+    this.footerButtons = buttons;
+    this.updateFooterColors();
+  }
+
+  private setFooterActive(mode: FooterMode) {
+    this.footerActive = mode;
+    this.updateFooterColors();
+  }
+
+  private updateFooterColors() {
+    if (!this.footerButtons) {
+      return;
+    }
+    const activeColor = '#f3e3c2';
+    const inactiveColor = '#a89678';
+    const hoverColor = '#d8c7a0';
+
+    const setColor = (text: Phaser.GameObjects.Text, key: FooterKey) => {
+      if (this.footerActive === key) {
+        text.setColor(activeColor);
+      } else if (text.input && text.input.enabled) {
+        text.setColor(inactiveColor);
+      } else {
+        text.setColor(hoverColor);
+      }
+    };
+
+    setColor(this.footerButtons.wordcard, 'wordcard');
+    setColor(this.footerButtons.item, 'item');
+    this.footerButtons.blank.setColor(inactiveColor);
+    this.footerButtons.leave.setColor(inactiveColor);
+  }
+
+  private hideCardBoard() {
+    this.cardBoard?.container.setVisible(false);
+    this.backButton?.setVisible(false);
+  }
+
+  private handleBackgroundPointerDown(
+    _pointer: Phaser.Input.Pointer,
+    currentlyOver: Phaser.GameObjects.GameObject[]
+  ) {
+    if (!this.cardBoard?.container.visible) {
+      return;
+    }
+    if (currentlyOver.length === 0) {
+      this.hideCardBoard();
+    }
+  }
+
+  private showWordCardChoices(resetPage: boolean) {
+    if (!this.cardBoard) {
+      return;
+    }
+
+    this.cardBoard.container.setVisible(true);
+    this.setFooterActive('wordcard');
+
+    if (!this.wordCards.length) {
+      this.boardMode = 'message';
+      this.showBoardMessage('目前沒有可用的字卡。');
+      return;
+    }
+
+    const items: CardBoardItem<CardChoiceData>[] = this.wordCards.map((card, index) => {
+      const tags = Array.isArray(card.標籤) ? card.標籤.slice() : [];
+      const notes = card.備註 ? String(card.備註) : '';
+      return {
+        id: card.id ?? `card-${index}`,
+        title: card.字 ?? card.id ?? `卡牌 ${index + 1}`,
+        description: notes,
+        tags,
+        tagLabel: '標籤：',
+        descriptionLabel: '備註：',
+        data: { kind: 'wordcard', card }
+      };
+    });
+
+    this.boardMode = 'wordcard';
+    this.cardBoard.setItems(items, resetPage);
+    if (resetPage) {
+      this.wordCardPage = 0;
+    }
+    if (!resetPage) {
+      this.cardBoard.setPage(this.wordCardPage);
+    }
+    this.backButton?.setVisible(false);
+    this.activeWordCard = undefined;
+    this.loadingOptions = false;
+  }
+
+  private showItemChoices(resetPage: boolean) {
+    if (!this.cardBoard) {
+      return;
+    }
+
+    this.cardBoard.container.setVisible(true);
+    this.setFooterActive('item');
+
+    if (!this.inventoryItems.length) {
+      this.boardMode = 'message';
+      this.showBoardMessage('你身上沒有可以出示的物品。');
+      return;
+    }
+
+    const items: CardBoardItem<CardChoiceData>[] = this.inventoryItems.map((item, index) => {
+      const descriptionParts: string[] = [];
+      if (item.來源) {
+        descriptionParts.push(`來源：${item.來源}`);
+      }
+      if (Array.isArray(item.用途) && item.用途.length) {
+        descriptionParts.push(`用途：${item.用途.join('、')}`);
+      }
+      if (item.鉤子) {
+        descriptionParts.push(item.鉤子);
+      }
+      return {
+        id: item.id ?? `item-${index}`,
+        title: item.名 ?? item.id ?? `物品 ${index + 1}`,
+        description: descriptionParts.join('\n'),
+        data: { kind: 'item', item }
+      };
+    });
+
+    this.boardMode = 'item';
+    this.cardBoard.setItems(items, resetPage);
+    if (resetPage) {
+      this.itemPage = 0;
+    }
+    if (!resetPage) {
+      this.cardBoard.setPage(this.itemPage);
+    }
+    this.backButton?.setVisible(false);
+    this.loadingOptions = false;
+  }
+
+  private showBoardMessage(message: string | string[], showBackButton = false) {
+    if (!this.cardBoard) {
+      return;
+    }
+    this.cardBoard.setMessage(message);
+    this.boardMode = 'message';
+    this.backButton?.setVisible(showBackButton);
+  }
+
+  private handleCardBoardSelection(item: CardBoardItem<CardChoiceData>) {
+    const data = item.data;
+    if (!data) {
+      return;
+    }
+    if (data.kind === 'wordcard') {
+      this.handleWordCardSelected(data.card);
+    } else if (data.kind === 'option') {
+      this.applyOption(data.option);
+    } else if (data.kind === 'item') {
+      this.presentItem(data.item);
+    }
+  }
+
+  private presentItem(item: SacredItem) {
+    const name = item.名 ?? item.id ?? '未知物品';
+    const lines = [`你拿出「${name}」。`];
+    if (item.鉤子) {
+      lines.push(item.鉤子);
+    }
+    this.dialogueBox?.setText(lines.join('\n'));
+  }
+
+  private buildOptionDescription(option: GhostOption) {
+    const parts: string[] = [];
+    if (option.effect) {
+      parts.push(`效果：${option.effect}`);
+    }
+    if (option.type) {
+      parts.push(`類型：${option.type}`);
+    }
+    return parts.join('\n');
   }
 
   private initializeObsessionState() {
@@ -184,9 +519,9 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
     const spacing = 52;
 
     this.add
-      .text(listX, 120, '她的執念', {
-        fontSize: '20px',
-        color: '#fff'
+      .text(listX, 128, '她的執念', {
+        fontSize: '22px',
+        color: '#f3e3c2'
       })
       .setOrigin(0, 0);
 
@@ -200,74 +535,6 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
     });
   }
 
-  private buildWordCardList(width: number) {
-    const listX = width - 220;
-    const listTop = 80;
-
-    this.add
-      .text(listX, 32, '可用字卡', {
-        fontSize: '22px',
-        color: '#fff'
-      })
-      .setOrigin(0.5, 0);
-
-    const totalRows = Math.max(6, this.wordCards.length);
-    const rowHeight = 48;
-
-    for (let index = 0; index < totalRows; index += 1) {
-      const card = this.wordCards[index];
-      const labelText = card ? card.字 : '（空）';
-      const text = this.add
-        .text(listX, listTop + index * rowHeight, labelText, {
-          fontSize: '20px',
-          color: card ? '#aaf' : '#666'
-        })
-        .setOrigin(0.5, 0)
-        .setInteractive(card ? { useHandCursor: true } : undefined);
-
-      if (card) {
-        text.on('pointerup', () => {
-          this.handleWordCardSelected(card);
-        });
-      }
-    }
-  }
-
-  private buildOptionsPanel(width: number, height: number) {
-    const panelX = width * 0.6;
-    const panelWidth = width * 0.3;
-
-    this.optionContainer = this.add.container(panelX, 140);
-
-    const panelBg = this.add
-      .rectangle(0, 0, panelWidth, height - 220, 0x000000, 0.4)
-      .setOrigin(0, 0);
-    this.optionContainer.add(panelBg);
-
-    const title = this.add
-      .text(panelWidth / 2, 12, '溝通選項', {
-        fontSize: '20px',
-        color: '#fff'
-      })
-      .setOrigin(0.5, 0);
-    this.optionContainer.add(title);
-
-    this.optionList = new OptionList<GhostOption>(this, panelWidth / 2, 72, {
-      width: panelWidth - 24,
-      wrapWidth: panelWidth - 32,
-      align: 'center',
-      fontSize: '18px'
-    });
-    this.optionList.on('confirm', (item: OptionListItem<GhostOption>) => {
-      const option = item.data;
-      if (option) {
-        this.applyOption(option);
-      }
-    });
-    this.optionContainer.add(this.optionList.container);
-    this.optionList.setMessage(['請選擇右側字卡']);
-  }
-
   private async handleWordCardSelected(card: WordCard) {
     if (!this.aio || !this.spirit || !this.world || this.loadingOptions) {
       return;
@@ -275,8 +542,10 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
     this.loadingOptions = true;
     this.consecutiveAccusations = 0;
     this.lastAccusationKey = undefined;
-
-    this.setOptionsText(['載入選項中……']);
+    this.activeWordCard = card;
+    this.boardMode = 'message';
+    this.showBoardMessage('載入選項中……', true);
+    this.dialogueBox?.setText(`你試著以「${card.字}」為開端。`);
 
     try {
       const stepIndex = this.getConversationStep();
@@ -288,33 +557,44 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
         seed
       });
 
-      if (!options.length) {
-        this.setOptionsText(['目前沒有可用選項。']);
-      } else {
-        this.populateOptions(options.map((option) => ({ card, option })));
+      if (this.activeWordCard !== card) {
+        return;
       }
+      this.populateOptions(options.map((option) => ({ card, option })));
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      this.setOptionsText([`取得選項失敗：${message}`]);
+      if (this.activeWordCard === card) {
+        this.showBoardMessage(`取得選項失敗：${message}`, true);
+        this.dialogueBox?.setText('她似乎沒有回應。');
+      }
     } finally {
       this.loadingOptions = false;
     }
   }
 
   private populateOptions(entries: { card: WordCard; option: GhostOption }[]) {
-    if (!this.optionList) {
+    if (!this.cardBoard) {
       return;
     }
 
-    const items = entries.map(({ option }) => ({
-      label: this.fitOptionText(String(option.text ?? '選項'), 40),
-      data: option
-    }));
-    this.optionList.setOptions(items);
-  }
+    if (!entries.length) {
+      this.boardMode = 'message';
+      this.showBoardMessage('目前沒有可用選項。', true);
+      this.dialogueBox?.setText('她對這個話題沒有回應。');
+      return;
+    }
 
-  private setOptionsText(lines: string[]) {
-    this.optionList?.setMessage(lines);
+    const items: CardBoardItem<CardChoiceData>[] = entries.map(({ card, option }, index) => ({
+      id: `${card.id ?? 'card'}-${index}`,
+      title: this.fitOptionText(String(option.text ?? '選項'), 36),
+      description: this.buildOptionDescription(option),
+      data: { kind: 'option', option }
+    }));
+
+    this.boardMode = 'option';
+    this.cardBoard.setItems(items, true);
+    this.backButton?.setVisible(true);
+    this.dialogueBox?.setText('選擇要說的話。');
   }
 
   private applyOption(option: GhostOption) {
@@ -384,7 +664,7 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
       }
     }
 
-    this.miasmaIndicator?.setMiasma(this.world.data.煞氣);
+    this.updateMiasmaText();
 
     const summaryParts: string[] = [];
     if (effect) {
@@ -393,8 +673,9 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
     if (Array.isArray(option.targets) && option.targets.length) {
       summaryParts.push(`影響執念：${this.describeTargets(option.targets)}`);
     }
-    this.feedbackText?.setText(summaryParts.join('\n'));
-    this.statusText?.setText(this.getStatusSummary());
+    const summary = summaryParts.length ? summaryParts.join('\n') : '她靜靜地看著你。';
+    this.dialogueBox?.setText(summary);
+    this.showWordCardChoices(false);
   }
 
   private getConversationStep(): number {
@@ -466,27 +747,14 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
 
   private triggerRefusal() {
     const needPerson = this.spirit?.特例?.關鍵人物 ?? null;
-    this.feedbackText?.setText('她沉默了');
+    this.dialogueBox?.setText('她沉默了。');
+    this.showBoardMessage('她沉默了。', true);
     if (this.input) {
       this.input.enabled = false;
     }
     this.time.delayedCall(400, () => {
       this.finalizeCommunication({ needPerson });
     });
-  }
-
-  private getStatusSummary() {
-    const miasma = this.world?.data.煞氣 ?? '未知';
-    const obsEntries = Array.from(this.obsessionState.entries());
-    const obsText = obsEntries.length
-      ? obsEntries
-          .map(([id, state]) => {
-            const name = this.spirit?.執念.find((obs) => obs.id === id)?.名 ?? id;
-            return `${name}: ${state}`;
-          })
-          .join('\n')
-      : '尚未撫平任何執念';
-    return `目前煞氣：${miasma}\n執念狀態：\n${obsText}`;
   }
 
   private fitOptionText(text: string, maxLength: number) {
@@ -497,6 +765,7 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
   }
 
   private finish() {
+    this.hideCardBoard();
     this.finalizeCommunication();
   }
 
@@ -505,6 +774,7 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
       return;
     }
     this.concluded = true;
+    this.hideCardBoard();
     if (this.input) {
       this.input.enabled = false;
     }
@@ -575,10 +845,21 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
       .join('、');
   }
 
+  private updateMiasmaText() {
+    if (!this.miasmaText) {
+      return;
+    }
+    const miasma = this.world?.data.煞氣 ?? '未知';
+    this.miasmaText.setText(`煞氣：${miasma}`);
+  }
+
   private handleSceneShutdown() {
-    this.optionList?.destroy();
-    this.optionList = undefined;
-    this.miasmaIndicator?.destroy();
-    this.miasmaIndicator = undefined;
+    if (this.input) {
+      this.input.off('pointerdown', this.handleBackgroundPointerDown, this);
+    }
+    this.cardBoard?.destroy();
+    this.cardBoard = undefined;
+    this.dialogueBox?.destroy();
+    this.dialogueBox = undefined;
   }
 }
