@@ -215,6 +215,8 @@ export default class CardBoard<T = unknown> extends Phaser.Events.EventEmitter {
     this.slots.forEach((slot) => {
       slot.container.removeAllListeners();
       slot.container.destroy(true);
+      slot.tag.destroy();
+      slot.description.destroy();
     });
     this.prevButton.destroy();
     this.nextButton.destroy();
@@ -232,11 +234,7 @@ export default class CardBoard<T = unknown> extends Phaser.Events.EventEmitter {
       cardBackgroundColor,
       cardBackgroundAlpha,
       titleFontSize,
-      tagFontSize,
-      descriptionFontSize,
-      titleColor,
-      tagColor,
-      descriptionColor
+      titleColor
     } = this.config;
 
     const container = this.scene.add.container(x, y);
@@ -248,40 +246,19 @@ export default class CardBoard<T = unknown> extends Phaser.Events.EventEmitter {
       .setOrigin(0.5, 0.5)
       .setStrokeStyle(2, 0x715c43, 0.9);
 
-    const titleTop = -cardHeight / 2 + 24;
     const title = this.scene.add
-      .text(0, titleTop, '', {
+      .text(0, 0, '', {
         fontSize: titleFontSize,
         color: titleColor,
         align: 'center',
         wordWrap: { width: cardWidth - 32 }
       })
-      .setOrigin(0.5, 0);
+      .setOrigin(0.5, 0.5);
 
-    const tagTop = titleTop + 40;
-    const tag = this.scene.add
-      .text(0, tagTop, '', {
-        fontSize: tagFontSize,
-        color: tagColor,
-        align: 'center',
-        wordWrap: { width: cardWidth - 36 }
-      })
-      .setOrigin(0.5, 0)
-      .setVisible(false);
+    const tag = this.scene.add.text(0, 0, '').setVisible(false);
+    const description = this.scene.add.text(0, 0, '').setVisible(false);
 
-    const descriptionBaseY = -cardHeight / 2 + 82;
-    const descriptionWithTagY = tagTop + 32;
-
-    const description = this.scene.add
-      .text(0, descriptionBaseY, '', {
-        fontSize: descriptionFontSize,
-        color: descriptionColor,
-        align: 'center',
-        wordWrap: { width: cardWidth - 36 }
-      })
-      .setOrigin(0.5, 0);
-
-    container.add([background, title, tag, description]);
+    container.add([background, title]);
     container.setVisible(false);
 
     container.on('pointerover', () => {
@@ -308,8 +285,8 @@ export default class CardBoard<T = unknown> extends Phaser.Events.EventEmitter {
       title,
       tag,
       description,
-      descriptionBaseY,
-      descriptionWithTagY
+      descriptionBaseY: 0,
+      descriptionWithTagY: 0
     };
   }
 
@@ -365,27 +342,10 @@ export default class CardBoard<T = unknown> extends Phaser.Events.EventEmitter {
         slot.container.setData('item', undefined);
         slot.container.setData('disabled', true);
         slot.background.setFillStyle(this.config.cardBackgroundColor, this.config.cardBackgroundAlpha);
-        slot.tag.setVisible(false);
         return;
       }
 
       slot.title.setText(item.title);
-      const tags = Array.isArray(item.tags) ? item.tags.filter((tag) => Boolean(tag)) : [];
-      if (tags.length) {
-        const joinedTags = tags.join('、');
-        const prefix = item.tagLabel ?? '';
-        slot.tag.setText(prefix ? `${prefix}${joinedTags}` : joinedTags);
-        slot.tag.setVisible(true);
-        slot.description.setY(slot.descriptionWithTagY);
-      } else {
-        slot.tag.setText('');
-        slot.tag.setVisible(false);
-        slot.description.setY(slot.descriptionBaseY);
-      }
-      const descriptionText = item.description ?? '';
-      slot.description.setText(
-        descriptionText ? (item.descriptionLabel ? `${item.descriptionLabel}${descriptionText}` : descriptionText) : ''
-      );
       slot.container.setData('item', item);
       slot.container.setData('disabled', Boolean(item.disabled));
       slot.container.setVisible(true);
@@ -393,13 +353,9 @@ export default class CardBoard<T = unknown> extends Phaser.Events.EventEmitter {
       if (item.disabled) {
         slot.background.setAlpha(this.config.cardBackgroundAlpha * 0.6);
         slot.title.setAlpha(0.6);
-        slot.tag.setAlpha(0.6);
-        slot.description.setAlpha(0.6);
       } else {
         slot.background.setAlpha(this.config.cardBackgroundAlpha);
         slot.title.setAlpha(1);
-        slot.tag.setAlpha(0.9);
-        slot.description.setAlpha(0.9);
       }
     });
 

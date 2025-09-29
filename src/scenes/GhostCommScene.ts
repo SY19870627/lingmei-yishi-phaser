@@ -149,11 +149,9 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
 
     this.cardBoard = new CardBoard<CardChoiceData>(this, width / 2, dialogueTop - 120, {
       cardWidth: 220,
-      cardHeight: 148,
+      cardHeight: 80,
       cardSpacing: 52,
-      titleFontSize: '30px',
-      tagFontSize: '20px',
-      descriptionFontSize: '18px'
+      titleFontSize: '30px'
     });
     const boardHeight = this.cardBoard.getHeight();
     this.cardBoard.container.setY(dialogueTop - boardHeight / 2);
