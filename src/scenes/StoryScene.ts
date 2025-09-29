@@ -47,6 +47,12 @@ type StoryNode = {
 type GhostCommResult = { resolvedKnots?: string[]; miasma?: string; needPerson?: string };
 type MediationResult = { npcId: string; stage: string; resolved: string[] };
 
+const zhBase = {
+  fontFamily: 'Noto Sans TC, PingFang TC, "Microsoft JhengHei", sans-serif',
+  padding: { top: 6, bottom: 2 },
+  color: '#fff'
+} as const;
+
 export default class StoryScene extends ModuleScene<{ storyId: string }, { flagsUpdated: string[] }> {
   private steps: StoryStep[] = [];
   private stepIndex = 0;
@@ -92,8 +98,8 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
 
     this.textBox = this.add
       .text(width / 2, height / 2 - 40, '', {
+        ...zhBase,
         fontSize: '24px',
-        color: '#fff',
         align: 'center',
         wordWrap: { width: width - 120 }
       })
@@ -101,6 +107,7 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
 
     this.promptText = this.add
       .text(width / 2, height / 2 + 60, '點擊繼續', {
+        ...zhBase,
         fontSize: '18px',
         color: '#ccc'
       })
@@ -115,6 +122,7 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
       .setStrokeStyle(2, 0xffffff, 0.4);
     this.speakerNameText = this.add
       .text(-dialogueWidth / 2 + 24, -dialogueHeight / 2 + 18, '', {
+        ...zhBase,
         fontSize: '20px',
         color: '#ffd54f',
         fontStyle: 'bold'
@@ -122,8 +130,8 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
       .setOrigin(0, 0);
     this.dialogueText = this.add
       .text(-dialogueWidth / 2 + 24, -dialogueHeight / 2 + 56, '', {
+        ...zhBase,
         fontSize: '22px',
-        color: '#fff',
         wordWrap: { width: dialogueWidth - 48 }
       })
       .setOrigin(0, 0);
@@ -558,6 +566,7 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
       const label = `${index + 1}. ${option.text}`;
       const optionText = this.add
         .text(width / 2, startY + index * optionSpacing, label, {
+          ...zhBase,
           fontSize: '20px',
           color: '#ddd',
           align: 'center',
@@ -825,10 +834,10 @@ export default class StoryScene extends ModuleScene<{ storyId: string }, { flags
     const { width, height } = this.scale;
     const toast = this.add
       .text(width - 16, height - 16, message, {
+        ...zhBase,
         fontSize: '16px',
-        color: '#fff',
         backgroundColor: '#000000aa',
-        padding: { x: 12, y: 6 },
+        padding: { ...zhBase.padding, left: 12, right: 12 },
         wordWrap: { width: width / 2 }
       })
       .setOrigin(1, 1);
