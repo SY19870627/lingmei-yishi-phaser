@@ -4,6 +4,9 @@ import type { GameSettings } from './Settings';
 import type { ProviderAdapter } from './ProviderAdapter';
 import { WebProviderAdapter } from './ProviderAdapter';
 
+/**
+ * 呼叫外部 AI 所需的上下文資料結構，包含靈體資訊、選取的字卡與世界狀態。
+ */
 export interface GhostOptionContext {
   spirit: Spirit;
   word: WordCard;
@@ -11,7 +14,11 @@ export interface GhostOptionContext {
   seed?: string;
 }
 
+/**
+ * 負責統整 AI 運算管線，視設定決定採用本機隨機生成或實際呼叫 GPT API。
+ */
 export class AiOrchestrator {
+  /** 目前選用的模式，預設為離線本機模式。 */
   mode: 'local' | 'provider' = 'local';
   private readonly settings?: GameSettings;
   private readonly providerAdapter: ProviderAdapter;
@@ -19,10 +26,16 @@ export class AiOrchestrator {
   constructor(settings?: GameSettings, providerAdapter: ProviderAdapter = new WebProviderAdapter()) {
     this.settings = settings;
     this.providerAdapter = providerAdapter;
+    this.refreshMode();
   }
 
+  /**
+   * 對外提供產生靈體回應選項的統一入口，依模式決定資料來源。
+   */
   async genGhostOptions(context: GhostOptionContext): Promise<{ options: GhostOption[]; tone: string }> {
     const { seed } = context;
+    this.refreshMode();
+
     if (this.mode === 'provider') {
       const response = await this.providerAdapter.requestChatJSON(context);
       return response as { options: GhostOption[]; tone: string };
@@ -35,16 +48,42 @@ export class AiOrchestrator {
     return { options, tone };
   }
 
+  /**
+   * 允許外部在設定改變時重新評估模式，例如切換離線模式時呼叫。
+   */
+  refreshMode(): void {
+    this.mode = this.shouldUseProvider() ? 'provider' : 'local';
+  }
+
+  /**
+   * 根據目前設定與 Adapter 狀態判斷是否要使用外部服務。
+   */
+  private shouldUseProvider(): boolean {
+    if (this.settings?.isOfflineMode()) {
+      return false;
+    }
+    return this.providerAdapter.isReady();
+  }
+
+  /**
+   * 建立可重現的亂數來源，讓離線模式也能擁有穩定結果。
+   */
   private createRandom(seed: string): RandomGenerator {
     return seedFrom(seed);
   }
 
+  /**
+   * 隨機挑選靈體的語氣，模擬基本的情緒變化。
+   */
   private pickTone(random: RandomGenerator): string {
     const tones = ['受傷但願談', '悲傷中求助', '試圖回應'];
     const index = Math.floor(random() * tones.length);
     return tones[Math.max(0, Math.min(index, tones.length - 1))];
   }
 
+  /**
+   * 離線模式下的預設選項組合，會依據玩家設定決定是否使用柔和語氣。
+   */
   private buildLocalOptions(random: RandomGenerator): GhostOption[] {
     const soften = this.settings?.isSoftLanguageEnabled() ?? false;
     const variants: Array<
@@ -97,6 +136,9 @@ export class AiOrchestrator {
     return this.shuffle(options, random);
   }
 
+  /**
+   * Fisher-Yates 演算法的變形，確保選項順序隨機但可重現。
+   */
   private shuffle<T>(items: T[], random: RandomGenerator): T[] {
     const clone = [...items];
     for (let i = clone.length - 1; i > 0; i -= 1) {
