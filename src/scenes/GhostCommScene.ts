@@ -11,6 +11,10 @@ import CardBoard from '@ui/CardBoard';
 import type { CardBoardItem } from '@ui/CardBoard';
 import { GhostDirector } from '@core/GhostDirector';
 
+/**
+ * 靈體溝通場景的核心類別，負責管理資料讀取、UI 建構以及與 AI 的互動流程。
+ */
+
 interface GhostCommResult {
   resolvedKnots?: string[];
   miasma?: string;
@@ -70,6 +74,9 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
     this.resetState();
   }
 
+  /**
+   * 進入場景時的初始化流程：讀取資料並構建所有 UI 元件。
+   */
   async create() {
     const spiritId = this.route?.in?.spiritId;
     this.repo = this.registry.get('repo') as DataRepo | undefined;
@@ -107,6 +114,9 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
     }
   }
 
+  /**
+   * 將場景內部狀態恢復成初始值，避免上一輪溝通的資料殘留。
+   */
   private resetState() {
     this.spirit = undefined;
     this.wordCards = [];
@@ -138,6 +148,9 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
     }
   }
 
+  /**
+   * 組裝對話框、卡牌區與選項列表等主要視覺元素。
+   */
   private buildLayout() {
     const { width, height } = this.scale;
 
@@ -571,6 +584,9 @@ export default class GhostCommScene extends ModuleScene<{ spiritId: string }, Gh
     });
   }
 
+  /**
+   * 玩家挑選字卡後會進入此流程，負責請求 AI 並顯示載入提示。
+   */
   private async handleWordCardSelected(card: WordCard) {
     if (!this.aio || !this.spirit || !this.world || this.loadingOptions) {
       return;
